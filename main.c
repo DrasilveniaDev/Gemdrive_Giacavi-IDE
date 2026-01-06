@@ -1,6 +1,31 @@
 #include <stdio.h>
 #include <SDL3/SDL.h>
+
+#include <stddef.h>
 #include "LCT_decode.h"
+
+SDL_Texture* PackToTexture_BGRA(SDL_Renderer* mRen, const unsigned char* raw, const size_t raw_size, int width, int height){
+    if(!mRen || !raw || width < 1 || height < 1) return NULL;
+    size_t raw_size_Must = (size_t)width * 4 * height;
+    if(raw_size_Must != raw_size) return NULL;
+
+    const int ByteW = width * 4;
+    SDL_Texture* mTex = SDL_CreateTexture(mRen, SDL_PIXELFORMAT_BGRA8888, SDL_TEXTUREACCESS_STATIC, width, height);
+    if(!mTex) return NULL;
+
+    if(SDL_UpdateTexture(mTex, NULL, (const void*)raw, ByteW) != 0) {
+        SDL_DestroyTexture(mTex);
+        return NULL;
+    }
+    SDL_SetTextureBlendMode(mTex, SDL_BLENDMODE_BLEND);
+
+    return mTex;
+}
+
+void CTexture_root(SDL_Renderer* mRen, const char* root){
+    imageLCT_C mImagePack = importLCT_root(root);
+    return PackToTexture_BGRA(mRen, mImagePack.raw, mImagePack.raw_size, mImagePack.da, mImagePack.de);
+}
 
 int main() {
     SDL_Window* win = NULL;
@@ -44,4 +69,5 @@ int main() {
     SDL_Quit();
 
     return 0;
+
 }

@@ -31,5 +31,3 @@ void free_CPP(unsigned char* rawP);
 #endif
 
 #endif // LCT Header
-
-

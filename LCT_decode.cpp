@@ -71,3 +71,7 @@ extern "C" imageLCT_C importLCT_root(const char* root){
 
     return dataCpp_C(importLCT_data(MBuffer));
 }
+
+extern "C" void free_CPP(unsigned char* rawP){
+    std::free(rawP);
+}

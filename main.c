@@ -24,7 +24,9 @@ SDL_Texture* PackToTexture_BGRA(SDL_Renderer* mRen, const unsigned char* raw, co
 
 SDL_Texture* CTexture_root(SDL_Renderer* mRen, const char* root){
     imageLCT_C mImagePack = importLCT_root(root);
-    return PackToTexture_BGRA(mRen, mImagePack.raw, mImagePack.raw_size, mImagePack.da, mImagePack.de);
+    SDL_Texture* mrTex = PackToTexture_BGRA(mRen, mImagePack.raw, mImagePack.raw_size, mImagePack.da, mImagePack.de);
+    free(mImagePack.raw);
+    return mrTex;
 }
 
 int main() {
@@ -49,6 +51,10 @@ int main() {
     int quit = 0;
     SDL_Event event;
     SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+
+    /* Images */
+    SDL_Texture* IMG_Example = CTexture_root(ren, "BMP_Vault.lct");
+
     while(quit == 0){
         while(SDL_PollEvent(&event)){
             switch(event.type){

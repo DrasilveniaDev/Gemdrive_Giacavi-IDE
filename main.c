@@ -24,9 +24,12 @@ SDL_Texture* PackToTexture_BGRA(SDL_Renderer* mRen, const unsigned char* raw, co
 
 SDL_Texture* CTexture_root(SDL_Renderer* mRen, const char* root){
     imageLCT_C mImagePack = importLCT_root(root);
-    SDL_Texture* mrTex = PackToTexture_BGRA(mRen, mImagePack.raw, mImagePack.raw_size, mImagePack.da, mImagePack.de);
-    free(mImagePack.raw);
-    return mrTex;
+    if(mImagePack.raw != NULL){
+        SDL_Texture* mrTex = PackToTexture_BGRA(mRen, mImagePack.raw, mImagePack.raw_size, mImagePack.da, mImagePack.de);
+        free_CPP(mImagePack.raw);
+        return mrTex;
+    }
+    return NULL;
 }
 
 int main() {
@@ -77,4 +80,3 @@ int main() {
     return 0;
 
 }
-

@@ -22,7 +22,7 @@ SDL_Texture* textureLCT_root(SDL_Renderer* mRen, const char* root){
     if(tr_tex == NULL){
         fprintf(stderr, "Tex load: Texture Failed. %s\n", SDL_GetError());
     }
-
+    free(mPack.raw);
     SDL_DestroySurface(tr_sur);
     return tr_tex;
 }

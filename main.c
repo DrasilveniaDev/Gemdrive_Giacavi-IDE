@@ -149,7 +149,7 @@ struct imageLCT_C rawCharFromFont(font_C mFont, char mCharANSI, uint32_t lowC, u
 
     int difC[4] = {0, 0, 0, 0};
     for(int C = 0; C < 4; C++){
-        difC[C] = (int)((highC >> C * 8) & 0xFF) - (int)((lowC >> C * 8) & 0xFF);
+        difC[C] = (int)((highC >> (C * 8)) & 0xFF) - (int)((lowC >> (C * 8)) & 0xFF);
         if(difC[C] > 255 || difC[C] < -255){
             difC[C] = 255 - 255 * (difC[C] < 0) * 2;
         }
@@ -278,4 +278,5 @@ int main(){
     SDL_Quit();
 
     return 0;
+
 }

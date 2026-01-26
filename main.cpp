@@ -1,7 +1,3 @@
-#ifdef _WIN32
-    #include <windows.h>
-#endif
-
 #include <iostream>
 #include <SDL3/SDL.h>
 #include <string>
@@ -136,7 +132,10 @@ fontPack importFont_root(const char* root, uint32_t SCharW, uint32_t SCharH, int
 
     // Character Box Predicted Cantity
     uint32_t CBPC = (mfpFont.fullW / mfpFont.charW) * (mfpFont.fullH / mfpFont.charH);
-    if(SvalE - SvalS != static_cast<int>(CBPC)) std::cout << "Characters needed according to Start & End parameters inserted, calculated with an arithmetic Charbox Cantity Prediction doesn't match to your template. Watch if there's something wrong with it\nCalculation:\n  Prediction: " << CBPC << "\n  Result: " << SvalE - SvalS << std::endl;
+    uint32_t CBAC = (SvalE - SvalS) + 1;
+    if(CBAC != CBPC) std::cout << "Characters needed according to Start & End parameters inserted, calculated with an arithmetic Charbox Cantity Prediction doesn't match to your template. Watch if there's something wrong with it\nCalculation:\n  Prediction: " << CBPC << "\n  Result: " << CBAC << std::endl;
+    mfpFont.valS = SvalS;
+    mfpFont.valE = SvalE;
 
     return mfpFont;
 }
@@ -162,9 +161,10 @@ SDL_Texture* textureImage(SDL_Renderer* mRen, imgPack& mipImage){
 imgPack customizeCharFF(const fontPack& mFont, uint16_t sChar, uint32_t lColor, uint32_t hColor){
     uint16_t mfxChar = sChar;
     mfxChar = static_cast<uint16_t>((int)mfxChar < mFont.valS ? mFont.valS & 0xFFFF : ((int)mfxChar > mFont.valE ? mFont.valE & 0xFFFF : mfxChar));
+    int mf0Char = static_cast<int>(mfxChar) - mFont.valS;
 
-    std::pair<int,int> fontPlace = {mFont.fullW / mFont.charW, mFont.fullH / mFont.charH};
-    std::pair<int,int> charUbication = {(mfxChar - mFont.valS) % fontPlace.first, (mfxChar - mFont.valS) / fontPlace.second};
+    int fontCBFC = static_cast<int>(mFont.fullW / mFont.charW);
+    std::pair<int,int> charUbication = {mf0Char % fontCBFC, mf0Char / fontCBFC};
 
     imgPack mipBChar;
     mipBChar.C = 0;
@@ -184,7 +184,7 @@ imgPack customizeCharFF(const fontPack& mFont, uint16_t sChar, uint32_t lColor, 
     }
 
     int ColInterpoled = 0;
-    for(int YCcut = 0; YCcut < (int)mFont.charW; YCcut++){
+    for(int YCcut = 0; YCcut < (int)mFont.charH; YCcut++){
         for(int XCcut = 0; XCcut < (int)mFont.charW; XCcut++){
             int svPixelCutI = XCcut + (charUbication.first * (int)mFont.charW) + (YCcut + (charUbication.second * (int)mFont.charH)) * (int)mFont.fullW;
             for(int C = 0; C < 4; C++){
@@ -271,20 +271,15 @@ int main(){
     SDL_Event event;
     SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
 
-    #ifdef _WIN32
-        SetConsoleOutputCP(1252);
-    #endif
-    std::string TextTesty = "Gemdrive Softwares © 2026 - Spräche Deutsch";
-    std::cout << UTF8_to_win1252_SS(TextTesty) << std::endl;
-
     // Fonts
     const fontPack FNT_Premier_Classic = importFont_root("font/fontN-Wwes-12-20 Premier_Classic.lct", 12, 20, 0x20, 0xFF, 2);
 
     /* This part is made for testing, and this code will be changed if we go more advanced */
-    imgPack IMGP_CharCIP = customizeCharFF(FNT_Premier_Classic, static_cast<uint16_t>(getOnlyChar_8b(UTF8_to_win1252_SS("a"))), 0x00FFFFFF, 0xFFFFFFFF);
+    imgPack IMGP_CharCIP = customizeCharFF(FNT_Premier_Classic, static_cast<uint16_t>(getOnlyChar_8b(UTF8_to_win1252_SS("Å"))) & 0xFF, 0xFF90238A, 0xFFFFFFFF);
     SDL_Texture* TEX_CharDT = textureImage(ren, IMGP_CharCIP);
     SDL_FRect charRect = {0, 0, 12, 20};
     /* End of the Case */
+    if(TEX_CharDT == nullptr) std::cout << "Texture not registered. Texturize failed" << std::endl;
 
     while(!quit){
         while(SDL_PollEvent(&event)){

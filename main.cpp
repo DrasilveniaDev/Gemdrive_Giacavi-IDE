@@ -35,10 +35,10 @@ uint16_t UTF8_to_16b_oneChar(const std::string& mSChar){
     if(mSChar.empty()) return 0;
 
     U16char_ps mtcC16b = UTF8_to_16b(mSChar.c_str());
-    if(mtcC16b.string == nullptr) return "";
+    if(mtcC16b.string == nullptr) return 0;
 
     uint16_t mC16b = mtcC16b.string[0];
-    S16b_free(mtcC16b);
+    S16b_free(mtcC16b.string);
     return mC16b;
 }
 std::u16string UTF8_to_16b_SS(const std::string& mSString){
@@ -48,7 +48,7 @@ std::u16string UTF8_to_16b_SS(const std::string& mSString){
     if(mtS16b.string == nullptr) return u"";
 
     std::u16string mS16b(reinterpret_cast<char16_t*>(mtS16b.string), mtS16b.size);
-    S16b_free(mtS16b);
+    S16b_free(mtS16b.string);
     return mS16b;
 } 
 
@@ -140,7 +140,7 @@ fontPack importFont_root(const char* root, uint32_t SCharW, uint32_t SCharH, int
 
     return mfpFont;
 }
-SDL_Texture* textureImage(SDL_Renderer* mRen, const imgPack& mipImage){
+SDL_Texture* textureImage(SDL_Renderer* mRen, imgPack& mipImage){
     if(mipImage.raw.empty() || mipImage.C == 0){
         return nullptr;
     }
@@ -178,7 +178,7 @@ imgPack customizeCharFF(const fontPack& mFont, uint16_t sChar, uint32_t lColor, 
         CIDiference.push_back(static_cast<float>(hSValC - lSValC));
         CIDiference[C] = CIDiference[C] < -255.0f ? -255.0f : (CIDiference[C] > 255.0f ? 255.0f : CIDiference[C]);
     }
-    if(CIDiference.size != 4){
+    if(CIDiference.size() != 4){
         std::cerr << "CIDiference list size is not 4. It resulted with a size of " << CIDiference.size() << " (customizeCharFF / err 0)" << std::endl;
         return mipBChar;
     }
@@ -186,7 +186,7 @@ imgPack customizeCharFF(const fontPack& mFont, uint16_t sChar, uint32_t lColor, 
     int ColInterpoled = 0;
     for(int YCcut = 0; YCcut < (int)mFont.charW; YCcut++){
         for(int XCcut = 0; XCcut < (int)mFont.charW; XCcut++){
-            int svPixelCutI = XCcut + (charUbication.first * (int)mFont.charW) + (YCut + (charUbication.second * (int)mFont.charH)) * (int)mFont.fullW;
+            int svPixelCutI = XCcut + (charUbication.first * (int)mFont.charW) + (YCcut + (charUbication.second * (int)mFont.charH)) * (int)mFont.fullW;
             for(int C = 0; C < 4; C++){
                 if(svPixelCutI < 0 || svPixelCutI >= static_cast<int>(mFont.raw.size())){
                     std::cout << "Result is going out the limits. That part will fill with a Semi-transparent Blue color (customizeCharFF / warn 0)" << std::endl;
@@ -281,7 +281,7 @@ int main(){
     const fontPack FNT_Premier_Classic = importFont_root("font/fontN-Wwes-12-20 Premier_Classic.lct", 12, 20, 0x20, 0xFF, 2);
 
     /* This part is made for testing, and this code will be changed if we go more advanced */
-    imgPack IMGP_CharCIP = customizeCharFF(FNT_Premier_Classic, static_cast<uint16_t>(getOnlyChar(UTF8_to_win1252_SS("a"))), 0x00FFFFFF, 0xFFFFFFFF);
+    imgPack IMGP_CharCIP = customizeCharFF(FNT_Premier_Classic, static_cast<uint16_t>(getOnlyChar_8b(UTF8_to_win1252_SS("a"))), 0x00FFFFFF, 0xFFFFFFFF);
     SDL_Texture* TEX_CharDT = textureImage(ren, IMGP_CharCIP);
     SDL_FRect charRect = {0, 0, 12, 20};
     /* End of the Case */

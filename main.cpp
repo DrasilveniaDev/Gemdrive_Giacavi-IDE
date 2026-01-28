@@ -1,9 +1,12 @@
 #include <iostream>
+#include <fstream>
+
 #include <SDL3/SDL.h>
 #include <string>
 #include <vector>
 #include <cstdint>
 #include <utility>
+#include <unordered_map>
 
 extern "C"{
     #include "LCT_decodeC.h"
@@ -246,6 +249,113 @@ uint16_t getOnlyChar_16b(std::u16string mUnChar16){
     return static_cast<uint16_t>(mUnChar16.empty() ? 0 : mUnChar16[0]);
 }
 
+std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> importDataList(std::string mRoot){
+    std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> mDataList;
+    std::ifstream mfDL(mRoot);
+    if(!mfDL.is_open()) return mDataList;
+
+    std::string msDataList((std::istreambuf_iterator<char>(mfDL)), std::istreambuf_iterator<char>());
+    if(msDataList.empty()) return mDataList;
+
+    struct DLObj_sty{
+        std::string param;
+        std::pair<uint32_t, uint32_t> style;
+    };
+    const std::vector<std::pair<std::string, int>> TTHexConv = {
+        {"Aa", 10},
+        {"Bb", 11},
+        {"Cc", 12},
+        {"Dd", 13},
+        {"Ee", 14},
+        {"Ff", 15}
+    };
+    DLObj_sty mopDL;
+    size_t DLParseI = 0;
+
+    while(DLParseI < msDataList.size()){
+        char mCharParse = msDataList[DLParseI];
+        while(mCharParse != '='){
+            if((mCharParse >= 0x41 && mCharParse < 0x5B) || (mCharParse >= 0x61 && mCharParse < 0x7B) || mCharParse == '_') mopDL.param.push_back(mCharParse);
+            if(++DLParseI < msDataList.size()){
+                mCharParse = msDataList[DLParseI];
+            }else{
+                break;
+            }
+        }
+        int tivHex = 0;
+        while(mCharParse != 'x' && ++DLParseI < msDataList.size()){
+            mCharParse = msDataList[DLParseI];
+        }
+        if(++DLParseI < msDataList.size()) mCharParse = msDataList[DLParseI];
+
+        for(int CHC = 0; CHC < 8; CHC++){
+            if(mCharParse == ',') break;
+            bool LHexF = false;
+            for(int i = 0; i < 6; i++){
+                if(TTHexConv[i].first[0] == mCharParse || TTHexConv[i].first[1] == mCharParse){
+                    LHexF = true;
+                    tivHex = TTHexConv[i].second;
+                    break;
+                }
+            }
+            if(!LHexF) tivHex = mCharParse >= 0x30 && mCharParse < 0x3A ? (static_cast<int>(mCharParse) & 0xF) : 0;
+            tivHex = tivHex < 0 ? 0 : (tivHex > 15 ? 15 : tivHex);
+
+            mopDL.style.first |= tivHex << ((7 - CHC) << 2);
+            if(++DLParseI < msDataList.size()){
+                mCharParse = msDataList[DLParseI];
+            } else {
+                break;
+            }
+            tivHex = 0;
+        }
+        while(mCharParse != 'x' && ++DLParseI < msDataList.size()){
+            mCharParse = msDataList[DLParseI];
+        }
+        if(++DLParseI < msDataList.size()) mCharParse = msDataList[DLParseI];
+
+        if(tivHex != 0) tivHex = 0;
+        for(int CHC = 0; CHC < 8; CHC++){
+            if(mCharParse == ',' || mCharParse == '\n') break;
+            bool LHexF = false;
+            for(int i = 0; i < 6; i++){
+                if(TTHexConv[i].first[0] == mCharParse || TTHexConv[i].first[1] == mCharParse){
+                    LHexF = true;
+                    tivHex = TTHexConv[i].second;
+                    break;
+                }
+            }
+            if(!LHexF) tivHex = mCharParse >= 0x30 && mCharParse < 0x3A ? (static_cast<int>(mCharParse) & 0xF) : 0;
+            tivHex = tivHex < 0 ? 0 : (tivHex > 15 ? 15 : tivHex);
+
+            mopDL.style.second |= tivHex << ((7 - CHC) << 2);
+            if(++DLParseI < msDataList.size()){
+                mCharParse = msDataList[DLParseI];
+            } else {
+                break;
+            }
+            tivHex = 0;
+        }
+        mDataList[mopDL.param] = mopDL.style;
+        mopDL.param.clear();
+        mopDL.style = {0, 0};
+
+        while(mCharParse == '\n' || mCharParse == ' ' || mCharParse == '\t'){
+            if(++DLParseI < msDataList.size()){
+                mCharParse = msDataList[DLParseI];
+            }else{
+                break;
+            }
+        }
+    }
+
+    return mDataList;
+}
+void ArrayDText(const fontPack& mFont, std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> dlTextStyle){
+    /* I didn't start to build this part, but when this function in top of this is fixed at 100%, I will go with this function
+    Check if the function "importDataList(std::string mRoot)" still presenting problems or crashes */
+}
+
 int main(){
     SDL_Window *win = nullptr;
     SDL_Renderer *ren = nullptr;
@@ -275,11 +385,18 @@ int main(){
     const fontPack FNT_Premier_Classic = importFont_root("font/fontN-Wwes-12-20 Premier_Classic.lct", 12, 20, 0x20, 0xFF, 2);
 
     /* This part is made for testing, and this code will be changed if we go more advanced */
-    imgPack IMGP_CharCIP = customizeCharFF(FNT_Premier_Classic, static_cast<uint16_t>(getOnlyChar_8b(UTF8_to_win1252_SS("Å"))) & 0xFF, 0xFF90238A, 0xFFFFFFFF);
+    imgPack IMGP_CharCIP = customizeCharFF(FNT_Premier_Classic, static_cast<uint16_t>(getOnlyChar_8b(UTF8_to_win1252_SS("Ý"))) & 0xFF, 0xFF408000, 0xFFC0FF80);
     SDL_Texture* TEX_CharDT = textureImage(ren, IMGP_CharCIP);
     SDL_FRect charRect = {0, 0, 12, 20};
     /* End of the Case */
     if(TEX_CharDT == nullptr) std::cout << "Texture not registered. Texturize failed" << std::endl;
+
+    /* This is essential and in progress for the Stylesheet loading */
+    std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> TestingDLStyle = importDataList("data/mainTheme.csv");
+
+    for(auto DLO = TestingDLStyle.begin(); DLO != TestingDLStyle.end(); ++DLO){
+        std::cout << DLO->first << std::string(16 - DLO->first.length(), ' ') << " -> 0x" << std::hex << DLO->second.first << " | 0x" << DLO->second.second << std::endl;
+    }
 
     while(!quit){
         while(SDL_PollEvent(&event)){

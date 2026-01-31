@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <utility>
 #include <unordered_map>
+#include <cmath>
 
 extern "C"{
     #include "LCT_decodeC.h"
@@ -255,6 +256,7 @@ std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> importDataList(st
     if(!mfDL.is_open()) return mDataList;
 
     std::string msDataList((std::istreambuf_iterator<char>(mfDL)), std::istreambuf_iterator<char>());
+    mfDL.close();
     if(msDataList.empty()) return mDataList;
 
     struct DLObj_sty{
@@ -316,7 +318,7 @@ std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> importDataList(st
 
         if(tivHex != 0) tivHex = 0;
         for(int CHC = 0; CHC < 8; CHC++){
-            if(mCharParse == ',' || mCharParse == '\n') break;
+            if(mCharParse == ',' || mCharParse == '\n' || mCharParse == '\r') break;
             bool LHexF = false;
             for(int i = 0; i < 6; i++){
                 if(TTHexConv[i].first[0] == mCharParse || TTHexConv[i].first[1] == mCharParse){
@@ -340,7 +342,7 @@ std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> importDataList(st
         mopDL.param.clear();
         mopDL.style = {0, 0};
 
-        while(mCharParse == '\n' || mCharParse == ' ' || mCharParse == '\t'){
+        while(mCharParse == '\n' || mCharParse == '\r' || mCharParse == ' ' || mCharParse == '\t'){
             if(++DLParseI < msDataList.size()){
                 mCharParse = msDataList[DLParseI];
             }else{
@@ -351,9 +353,114 @@ std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> importDataList(st
 
     return mDataList;
 }
-void ArrayDText(const fontPack& mFont, std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> dlTextStyle){
-    /* I didn't start to build this part, but when this function in top of this is fixed at 100%, I will go with this function
-    Check if the function "importDataList(std::string mRoot)" still presenting problems or crashes */
+
+int tabLSize = 4; // The tab size will be 4 by default. If this changes, will display another thing.
+
+// ArrayDText_UTF16(ren, FNT_Premier_Classic, importDataList("data/mainTheme.csv"), u"UTF-16 Example", 1024, 680, 0, 120, roadX, roadY, 1.0f);
+
+void ArrayDText_UTF16(SDL_Renderer* mRen, const fontPack& mFont, std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> dlTextStyle, const std::u16string& textFile_U16, int screen_w, int screen_h, int dx, int dy, int cx, int cy, float resizeDC){
+    if(dlTextStyle.find("SText") == dlTextStyle.end()){
+        dlTextStyle["SText"] = {0xFF000000, 0xFFFFFFFF};
+        std::cout << "The data list doesn't have token \"SText\". It will be assigned with these colors by default {Black, White} (ArrayDText / warn 0)" << std::endl;
+    }
+
+    auto StyleAClass = dlTextStyle.end();
+    std::pair<uint32_t, uint32_t> Style2C = {0,0};
+
+    char16_t prevChar = 0;
+    bool contLoop = true;
+    SDL_Texture* mtexDChar = nullptr;
+
+    if(screen_w <= dx || screen_h <= dy){
+        std::cout << "Display will be hide because the Display point position is out of the screen visible zone. (ArrayDText / warn 1)\nNote that as it's hidden, texture proccess will be ignored." << std::endl;
+        continue;
+    }
+
+    float ACD_x = static_cast<float>(dx);
+    float ACD_y = static_cast<float>(dy);
+    const std::pair<float,float> CDS = {static_cast<float>(mFont.charW) * resizeDC, static_cast<float>(mFont.charH) * resizeDC};
+
+    imgPack mipDChar;
+    bool takedSpChar = false;
+    SDL_FRect mduCharRect = {0.0f, 0.0f, 0.0f, 0.0f};
+
+    std::u16string DispCompressTF_U16;
+    const std::pair<int,int> CCDC = {
+        static_cast<int>(std::ceil((screen_w - dx) / CDS.first)),
+        static_cast<int>(std::ceil((screen_h - dy) / CDS.second))
+    };
+    std::pair<int,int> CharUbic = {0,0};
+
+    for(const char16_t& mChar16_p : textFile_U16){
+        switch(mChar16_p){
+            case 0x000D:
+            case 0x000A:
+                if(CharUbic.second - cy >= 0 && CharUbic.second - cy < CCDC.second) DispCompressTF_U16.push_back(mChar16_p);
+                CharUbic.first = 0;
+                if(mChar16_p == 0x000A) CharUbic.second++;
+                break;
+            default:
+                if(CharUbic.first - cx >= 0 && CharUbic.first - cx < CCDC.first && CharUbic.second - cy >= 0 && CharUbic.second - cy < CCDC.second) DispCompressTF_U16.push_back(mChar16_p);
+                CharUbic.first++;
+                break;
+        }
+    }
+    for(const char16_t& mChar16 : DispCompressTF_U16){
+        // Style Use method isn't started. It's a testing simple code. More soon we add functionality
+
+        StyleAClass = dlTextStyle.find("SText");
+        Style2C = StyleAClass->second;
+
+        switch(static_cast<uint16_t>(mChar16)){
+            case 0x000D:
+                SDL_SetRenderDrawColor(mRen, ((Style2C.first >> 16) & 0xFF), ((Style2C.first >> 8) & 0xFF), (Style2C.first & 0xFF), ((Style2C.first >> 24) & 0xFF));
+                mduCharRect = {ACD_x, ACD_y, static_cast<float>(screen_w) - ACD_x, CDS.second};
+                SDL_RenderFillRectF(mRen, &mduCharRect);
+                SDL_SetRenderDrawColor(mRen, 0, 0, 0, 255);
+
+                ACD_x = static_cast<float>(dx);
+                takedSpChar = true;
+                break;
+            case 0x000A:
+                if(0x000D != prevChar){
+                    SDL_SetRenderDrawColor(mRen, ((Style2C.first >> 16) & 0xFF), ((Style2C.first >> 8) & 0xFF), (Style2C.first & 0xFF), ((Style2C.first >> 24) & 0xFF));
+                    mduCharRect = {ACD_x, ACD_y, static_cast<float>(screen_w) - ACD_x, CDS.second};
+                    SDL_RenderFillRectF(mRen, &mduCharRect);
+                    SDL_SetRenderDrawColor(mRen, 0, 0, 0, 255);
+
+                    ACD_x = static_cast<float>(dx);
+                }
+                ACD_y += CDS.second;
+                takedSpChar = true;
+                break;
+            default:
+                if(contLoop || mChar16 != prevChar){
+                mipDChar = customizeCharFF(mFont, static_cast<uint16_t>(mChar16), Style2C.first, Style2C.second);
+
+                if(mtexDChar != nullptr) SDL_DestroyTexture(mtexDChar);
+                mtexDChar = textureImage(mRen, mipDChar);
+        }
+        if(!takedSpChar){
+            mduCharRect = {ACD_x, ACD_y, CDS.first, CDS.second};
+            SDL_RenderTexture(mRen, mtexDChar, nullptr, &mduCharRect);
+            ACD_x += CDS.first;
+        }
+
+        if(contLoop) contLoop = false;
+        prevChar = mChar16;
+        if(takedSpChar) takedSpChar = false;
+    }
+    if(prevChar != 0x000A){
+        ACD_x = static_cast<float>(dx);
+        ACD_y += CDS.second;
+    }
+    if(ACD_y >= static_cast<float>(screen_h)){
+        SDL_SetRendererDrawColor(mRen, ((Style2C.first >> 16) & 0xFF), ((Style2C.first >> 8) & 0xFF), (Style2C.first & 0xFF), ((Style2C.first >> 24) & 0xFF));
+        mduCharRect = {ACD_x, ACD_y, static_cast<float>(screen_w) - ACD_x, static_cast<float>(screen_h) - ACD_y};
+        SDL_RenderFillRectF(mRen, &mduCharRect);
+        SDL_SetRendererDrawColor(mRen, 0, 0, 0, 255);
+    }
+    if(mtexDChar != nullptr) SDL_DestroyTexture(mtexDChar);
 }
 
 int main(){
@@ -384,20 +491,14 @@ int main(){
     // Fonts
     const fontPack FNT_Premier_Classic = importFont_root("font/fontN-Wwes-12-20 Premier_Classic.lct", 12, 20, 0x20, 0xFF, 2);
 
-    /* This part is made for testing, and this code will be changed if we go more advanced */
-    imgPack IMGP_CharCIP = customizeCharFF(FNT_Premier_Classic, static_cast<uint16_t>(getOnlyChar_8b(UTF8_to_win1252_SS("Ý"))) & 0xFF, 0xFF408000, 0xFFC0FF80);
-    SDL_Texture* TEX_CharDT = textureImage(ren, IMGP_CharCIP);
-    SDL_FRect charRect = {0, 0, 12, 20};
-    /* End of the Case */
-    if(TEX_CharDT == nullptr) std::cout << "Texture not registered. Texturize failed" << std::endl;
-
-    /* This is essential and in progress for the Stylesheet loading */
+    // Color Packs
     std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> TestingDLStyle = importDataList("data/mainTheme.csv");
 
     for(auto DLO = TestingDLStyle.begin(); DLO != TestingDLStyle.end(); ++DLO){
         std::cout << DLO->first << std::string(16 - DLO->first.length(), ' ') << " -> 0x" << std::hex << DLO->second.first << " | 0x" << DLO->second.second << std::endl;
     }
 
+    std::pair<int,int> winSize;
     while(!quit){
         while(SDL_PollEvent(&event)){
             switch(event.type){
@@ -407,14 +508,13 @@ int main(){
             }
         }
         SDL_RenderClear(ren);
+        SDL_GetWindowSizeInPixels(win, &winSize.first, &winSize.second);
 
-        if(TEX_CharDT != nullptr) SDL_RenderTexture(ren, TEX_CharDT, nullptr, &charRect);
+        ArrayDText_UTF16(ren, FNT_Premier_Classic, TestingDLStyle, UTF8_to_16b("Hello World!"), winSize.first, winSize.second, 0, 20, 0, 0, 1.0f);
 
         SDL_RenderPresent(ren);
         SDL_Delay(33);
     }
-
-    SDL_DestroyTexture(TEX_CharDT);
 
     SDL_DestroyRenderer(ren);
     SDL_DestroyWindow(win);

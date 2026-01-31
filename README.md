@@ -1,6 +1,23 @@
 # Gemdrive Giacavi IDE
-## Version: 1.0a (BS 8) 
-*More soon I write the version anotation rules.*
+## Version: 1.0a (BS 11) / (C-6)
+The rules for the notation of the versions are the followings rules:
+
+**Numeral Version:** 1.2.3
+- First digit means difference with a great change for the project.
+- Second digit means difference with a small or average change for the project.
+- Third digit means an Important change for some reason, but not changing general tools or functions.
+
+**Project Stage:** *1.0b*
+- 'a' means that it's an **alpha** version of this project
+- 'b' **beta** version
+- No letter after number means that it's now a stable version.
+
+Take in mind that the project Stage letter goes after the numeral version.
+
+**Build Version:** (BS 11)
+This build version will always go with the parenthesis and it goes after the version. Each change, eveything counts as a new build. f.e: The version was (BS 10), and if I submit an update to an source file, the build version will change (BS 10) to (BS 11).
+- "BS" means: Build Submitt.
+- "C" means: Compilation. Each compilation it goes 1+ for the application
 
 ## Rules
 1. Don't add in any moment AI functions for this IDE.

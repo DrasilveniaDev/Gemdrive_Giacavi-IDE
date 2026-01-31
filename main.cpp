@@ -373,7 +373,7 @@ void ArrayDText_UTF16(SDL_Renderer* mRen, const fontPack& mFont, std::unordered_
 
     if(screen_w <= dx || screen_h <= dy){
         std::cout << "Display will be hide because the Display point position is out of the screen visible zone. (ArrayDText / warn 1)\nNote that as it's hidden, texture proccess will be ignored." << std::endl;
-        continue;
+        return;
     }
 
     float ACD_x = static_cast<float>(dx);
@@ -415,7 +415,7 @@ void ArrayDText_UTF16(SDL_Renderer* mRen, const fontPack& mFont, std::unordered_
             case 0x000D:
                 SDL_SetRenderDrawColor(mRen, ((Style2C.first >> 16) & 0xFF), ((Style2C.first >> 8) & 0xFF), (Style2C.first & 0xFF), ((Style2C.first >> 24) & 0xFF));
                 mduCharRect = {ACD_x, ACD_y, static_cast<float>(screen_w) - ACD_x, CDS.second};
-                SDL_RenderFillRectF(mRen, &mduCharRect);
+                SDL_RenderFillRect(mRen, &mduCharRect);
                 SDL_SetRenderDrawColor(mRen, 0, 0, 0, 255);
 
                 ACD_x = static_cast<float>(dx);
@@ -425,7 +425,7 @@ void ArrayDText_UTF16(SDL_Renderer* mRen, const fontPack& mFont, std::unordered_
                 if(0x000D != prevChar){
                     SDL_SetRenderDrawColor(mRen, ((Style2C.first >> 16) & 0xFF), ((Style2C.first >> 8) & 0xFF), (Style2C.first & 0xFF), ((Style2C.first >> 24) & 0xFF));
                     mduCharRect = {ACD_x, ACD_y, static_cast<float>(screen_w) - ACD_x, CDS.second};
-                    SDL_RenderFillRectF(mRen, &mduCharRect);
+                    SDL_RenderFillRect(mRen, &mduCharRect);
                     SDL_SetRenderDrawColor(mRen, 0, 0, 0, 255);
 
                     ACD_x = static_cast<float>(dx);
@@ -435,10 +435,12 @@ void ArrayDText_UTF16(SDL_Renderer* mRen, const fontPack& mFont, std::unordered_
                 break;
             default:
                 if(contLoop || mChar16 != prevChar){
-                mipDChar = customizeCharFF(mFont, static_cast<uint16_t>(mChar16), Style2C.first, Style2C.second);
+                    mipDChar = customizeCharFF(mFont, static_cast<uint16_t>(mChar16), Style2C.first, Style2C.second);
 
-                if(mtexDChar != nullptr) SDL_DestroyTexture(mtexDChar);
-                mtexDChar = textureImage(mRen, mipDChar);
+                    if(mtexDChar != nullptr) SDL_DestroyTexture(mtexDChar);
+                    mtexDChar = textureImage(mRen, mipDChar);
+                }
+                break;
         }
         if(!takedSpChar){
             mduCharRect = {ACD_x, ACD_y, CDS.first, CDS.second};
@@ -455,10 +457,10 @@ void ArrayDText_UTF16(SDL_Renderer* mRen, const fontPack& mFont, std::unordered_
         ACD_y += CDS.second;
     }
     if(ACD_y >= static_cast<float>(screen_h)){
-        SDL_SetRendererDrawColor(mRen, ((Style2C.first >> 16) & 0xFF), ((Style2C.first >> 8) & 0xFF), (Style2C.first & 0xFF), ((Style2C.first >> 24) & 0xFF));
+        SDL_SetRenderDrawColor(mRen, ((Style2C.first >> 16) & 0xFF), ((Style2C.first >> 8) & 0xFF), (Style2C.first & 0xFF), ((Style2C.first >> 24) & 0xFF));
         mduCharRect = {ACD_x, ACD_y, static_cast<float>(screen_w) - ACD_x, static_cast<float>(screen_h) - ACD_y};
-        SDL_RenderFillRectF(mRen, &mduCharRect);
-        SDL_SetRendererDrawColor(mRen, 0, 0, 0, 255);
+        SDL_RenderFillRect(mRen, &mduCharRect);
+        SDL_SetRenderDrawColor(mRen, 0, 0, 0, 255);
     }
     if(mtexDChar != nullptr) SDL_DestroyTexture(mtexDChar);
 }
@@ -510,7 +512,7 @@ int main(){
         SDL_RenderClear(ren);
         SDL_GetWindowSizeInPixels(win, &winSize.first, &winSize.second);
 
-        ArrayDText_UTF16(ren, FNT_Premier_Classic, TestingDLStyle, UTF8_to_16b("Hello World!"), winSize.first, winSize.second, 0, 20, 0, 0, 1.0f);
+        ArrayDText_UTF16(ren, FNT_Premier_Classic, TestingDLStyle, UTF8_to_16b_SS("Hello World!"), winSize.first, winSize.second, 0, 20, 0, 0, 1.0f);
 
         SDL_RenderPresent(ren);
         SDL_Delay(33);

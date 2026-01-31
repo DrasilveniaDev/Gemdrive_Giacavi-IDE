@@ -1,4 +1,8 @@
-# Gemdrive Giacavi - Rules
+# Gemdrive Giacavi IDE
+## Version: 1.0a (BS 8) 
+*More soon I write the version anotation rules.*
+
+## Rules
 1. Don't add in any moment AI functions for this IDE.
 2. The project will start using **Windows 1252**, more soon if the project had reached to an advanced level, we try to make a font for **UTF8**. Please, don't use *.ttf or .otf* fonts for the project. It's not supported by now and it will use Font Template Images. Like an image with more squares with the size for the characters. And it will be used for a different codec.
 3. Conserve the Font display and the tools for the Source Files Editing on the IDE using **SDL3** and don't use other Graphics.

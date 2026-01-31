@@ -1,0 +1,1 @@
+This is the folder for save recent Stylesheets for be displayed on the IDE. It's just starting, and some style tokens aren't used for debugging and test. Do not delete this files for my IDE because it will be obviously used.

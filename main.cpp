@@ -405,11 +405,58 @@ void ArrayDText_UTF16(SDL_Renderer* mRen, const fontPack& mFont, std::unordered_
                 break;
         }
     }
-    for(const char16_t& mChar16 : DispCompressTF_U16){
-        // Style Use method isn't started. It's a testing simple code. More soon we add functionality
 
-        StyleAClass = dlTextStyle.find("SText");
-        Style2C = StyleAClass->second;
+    std::string StyleIDECase = "SText";
+    std::string StyleIDECase_p;
+    std::pair<char16_t,bool> cooldownChar16 = {0, false};
+    for(const char16_t& mChar16 : DispCompressTF_U16){
+        if(!cooldownChar16.second || mChar16 == cooldownChar16.first){
+            StyleIDECase = "SText";
+            std::pair<char16_t,bool> cooldownChar16_fd = cooldownChar16; // Finded
+            cooldownChar16 = {0, false};
+            switch(mChar16){
+                case 0x0023:
+                    if(dlTextStyle.find("SDeclaration") != dlTextStyle.end()){
+                        StyleIDECase = "SDeclaration";
+                        cooldownChar16 = {0x000A, true};
+                    }
+                    break;
+                case 0x0028:
+                case 0x0029:
+                case 0x005B:
+                case 0x005D:
+                case 0x007B:
+                case 0x007D:
+                    if(dlTextStyle.find("SPunctuation") != dlTextStyle.end()){
+                        StyleIDECase = "SPunctuation";
+                        cooldownChar16 = {0, false};
+                    }
+                    break;
+                case 0x002C:
+                case 0x002E:
+                case 0x003A:
+                case 0x003B:
+                    if(dlTextStyle.find("SPunctuation") != dlTextStyle.end()){
+                        StyleIDECase = dlTextStyle.find("SPunctuationC") != dlTextStyle.end() ? "SPunctuationC" : "SPunctuation";
+                        cooldownChar16 = {0, false};
+                    }
+                    break;
+                case 0x0022:
+                case 0x0027:
+                    StyleIDECase = dlTextStyle.find("SString") != dlTextStyle.end() && mChar16 == 0x0022 ? "SString" : (dlTextStyle.find("SChar") != dlTextStyle.end() && mChar16 == 0x0027 ? "SChar" : "SText");
+                    cooldownChar16 = StyleIDECase == "SString" ? std::pair<char16_t,bool>{0x0022, true} : (StyleIDECase == "SChar" ? std::pair<char16_t,bool>{0x0027, true} : std::pair<char16_t,bool>{0, false});
+                    if(cooldownChar16_fd.second == true) cooldownChar16.second = false;
+                    break;
+                default:
+                    StyleIDECase = "SText";
+                    cooldownChar16 = {0, false};
+            }
+        }
+
+        if(StyleIDECase_p.empty() || StyleIDECase_p != StyleIDECase){
+            StyleAClass = dlTextStyle.find(StyleIDECase);
+            Style2C = StyleAClass->second;
+        }
 
         switch(static_cast<uint16_t>(mChar16)){
             case 0x000D:
@@ -459,6 +506,7 @@ void ArrayDText_UTF16(SDL_Renderer* mRen, const fontPack& mFont, std::unordered_
 
         if(contLoop) contLoop = false;
         prevChar = mChar16;
+        StyleIDECase_p = StyleIDECase;
         if(takedSpChar) takedSpChar = false;
     }
 
@@ -508,11 +556,7 @@ int main(){
     const fontPack FNT_Premier_Classic = importFont_root("font/fontN-Wwes-12-20 Premier_Classic.lct", 12, 20, 0x20, 0xFF, 2);
 
     // Color Packs
-    std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> TestingDLStyle = importDataList("data/mainTheme.csv");
-
-    for(auto DLO = TestingDLStyle.begin(); DLO != TestingDLStyle.end(); ++DLO){
-        std::cout << DLO->first << std::string(16 - DLO->first.length(), ' ') << " -> 0x" << std::hex << DLO->second.first << " | 0x" << DLO->second.second << std::endl;
-    }
+    std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> mDLStyle = importDataList("data/mainTheme.csv");
 
     std::pair<int,int> winSize;
     while(!quit){
@@ -526,7 +570,13 @@ int main(){
         SDL_RenderClear(ren);
         SDL_GetWindowSizeInPixels(win, &winSize.first, &winSize.second);
 
-        ArrayDText_UTF16(ren, FNT_Premier_Classic, TestingDLStyle, UTF8_to_16b_SS("#include <stdio.h>\r\nint main(){\r\n\tprintf(\"hello\\n\");\r\n\treturn 0;\r\n}\r\n"), winSize.first, winSize.second, 0, 20, 0, 0, 1.0f);
+        ArrayDText_UTF16(
+            ren,
+            FNT_Premier_Classic,
+            mDLStyle,
+            UTF8_to_16b_SS("#include <stdio.h>\r\n#include <stdlib.h>\r\nint main(){\r\n\tchar* stringExample = (char*)malloc(12);\r\n\tif(stringExample != NULL){\r\n\t\tstringExample = \"Hello World\";\r\n\t\tprintf(%s, stringExample);\r\n\t}\r\n\treturn 0;\r\n}\r\n"),
+            winSize.first, winSize.second, 0, 20, 0, 0, 1.0f
+        );
 
         SDL_RenderPresent(ren);
         SDL_Delay(33);

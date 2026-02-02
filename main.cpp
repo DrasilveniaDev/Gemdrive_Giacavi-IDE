@@ -410,6 +410,10 @@ void ArrayDText_UTF16(SDL_Renderer* mRen, const fontPack& mFont, std::unordered_
     std::string StyleIDECase_p;
     std::pair<char16_t,bool> cooldownChar16 = {0, false};
     for(const char16_t& mChar16 : DispCompressTF_U16){
+        if(mChar16 == 0x000A && cooldownChar16 != std::pair<char16_t,bool>{0, false}){
+            StyleIDECase = "SText";
+            cooldownChar16 = {0, false};
+        }
         if(!cooldownChar16.second || mChar16 == cooldownChar16.first){
             StyleIDECase = "SText";
             std::pair<char16_t,bool> cooldownChar16_fd = cooldownChar16; // Finded
@@ -534,11 +538,12 @@ int main(){
         return 1;
     }
 
-    win = SDL_CreateWindow("Gemdrive Giacavi 1.0a", 1024, 680, 0);
+    win = SDL_CreateWindow("Gemdrive Giacavi 1.0a", 1024, 680, SDL_WINDOW_RESIZABLE);
     if(win == nullptr){
         SDL_Quit();
         return 1;
     }
+    SDL_SetWindowMinimumSize(win, 380, 260);
 
     ren = SDL_CreateRenderer(win, nullptr);
     if(ren == nullptr){
@@ -559,22 +564,25 @@ int main(){
     std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> mDLStyle = importDataList("data/mainTheme.csv");
 
     std::pair<int,int> winSize;
+    SDL_GetWindowSizeInPixels(win, &winSize.first, &winSize.second);
     while(!quit){
         while(SDL_PollEvent(&event)){
             switch(event.type){
                 case SDL_EVENT_QUIT:
                     quit = true;
                     break;
+                case SDL_EVENT_WINDOW_RESIZED:
+                    SDL_GetWindowSizeInPixels(win, &winSize.first, &winSize.second);
+                    break;
             }
         }
         SDL_RenderClear(ren);
-        SDL_GetWindowSizeInPixels(win, &winSize.first, &winSize.second);
 
         ArrayDText_UTF16(
             ren,
             FNT_Premier_Classic,
             mDLStyle,
-            UTF8_to_16b_SS("#include <stdio.h>\r\n#include <stdlib.h>\r\nint main(){\r\n\tchar* stringExample = (char*)malloc(12);\r\n\tif(stringExample != NULL){\r\n\t\tstringExample = \"Hello World\";\r\n\t\tprintf(%s, stringExample);\r\n\t}\r\n\treturn 0;\r\n}\r\n"),
+            UTF8_to_16b_SS("#include <stdio.h>\r\n#include <stdlib.h>\r\nint main(){\r\n\tchar* stringExample = (char*)malloc(12);\r\n\tif(stringExample != NULL){\r\n\t\tstringExample = \"Hello World\";\r\n\t\tprintf(%s, stringExample);\r\n\t\tfree(stringExample);\r\n\t}\r\n\treturn 0;\r\n}\r\n"),
             winSize.first, winSize.second, 0, 20, 0, 0, 1.0f
         );
 

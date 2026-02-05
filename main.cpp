@@ -12,6 +12,7 @@
 extern "C"{
     #include "LCT_decodeC.h"
     #include "unicode_kit.h"
+    #include "styleButtonFlow.h"
 }
 
 // Text Codec Tools
@@ -150,10 +151,10 @@ SDL_Texture* textureImage(SDL_Renderer* mRen, imgPack& mipImage){
 
     const int mipX_pitch = mipImage.width * mipImage.C;
     SDL_Surface* mtrSur = nullptr;
-    if(mipImage.C == 4){
-        mtrSur = SDL_CreateSurfaceFrom((int)mipImage.width, (int)mipImage.height, SDL_PIXELFORMAT_BGRA32, mipImage.raw.data(), mipX_pitch);
-    }else if(mipImage.C == 3){
-        mtrSur = SDL_CreateSurfaceFrom((int)mipImage.width, (int)mipImage.height, SDL_PIXELFORMAT_BGR24, mipImage.raw.data(), mipX_pitch);
+    if(mipImage.C == 3 || mipImage.C == 4){
+        mtrSur = SDL_CreateSurfaceFrom((int)mipImage.width, (int)mipImage.height, (mipImage.C == 4) ? SDL_PIXELFORMAT_BGRA32 : SDL_PIXELFORMAT_BGR24, mipImage.raw.data(), mipX_pitch);
+    }else{
+        std::cerr << "Invalid Color cantity" << std::endl;
     }
     if(mtrSur == nullptr) return nullptr;
 
@@ -530,6 +531,10 @@ void ArrayDText_UTF16(SDL_Renderer* mRen, const fontPack& mFont, std::unordered_
     if(mtexDChar != nullptr) SDL_DestroyTexture(mtexDChar);
 }
 
+void createButtonFlow_tex_X(SDL_Renderer* mRen, int ChaC, std::vector<uint32_t> mFlowCFill, size_t mFCF_size, std::vector<uint32_t>mFlowCBord, size_t mFCB_size, float posX, float posY, float miW, float miH, float bordS){
+    createButtonFlow_tex(mRen, ChaC, mFlowCFill.data(), mFCF_size, mFlowCBord.data(), mFCB_size, posX, posY, miW, miH, bordS);
+}
+
 int main(){
     SDL_Window *win = nullptr;
     SDL_Renderer *ren = nullptr;
@@ -583,7 +588,13 @@ int main(){
             FNT_Premier_Classic,
             mDLStyle,
             UTF8_to_16b_SS("#include <stdio.h>\r\n#include <stdlib.h>\r\nint main(){\r\n\tchar* stringExample = (char*)malloc(12);\r\n\tif(stringExample != NULL){\r\n\t\tstringExample = \"Hello World\";\r\n\t\tprintf(%s, stringExample);\r\n\t\tfree(stringExample);\r\n\t}\r\n\treturn 0;\r\n}\r\n"),
-            winSize.first, winSize.second, 0, 20, 0, 0, 1.0f
+            winSize.first, winSize.second, 0, 30, 0, 0, 1.0f
+        );
+
+        createButtonFlow_tex_X(
+            ren, 4,
+            {0xFFFFE080, 0xFFFFD426, 0xFFB8AD10}, 3, {0xFF403C10, 0xFF302A0C}, 2,
+            0.0f, 0.0f, 80.0f, 24.0f, 2.0f
         );
 
         SDL_RenderPresent(ren);

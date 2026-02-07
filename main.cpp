@@ -407,6 +407,17 @@ void ArrayDText_UTF16(SDL_Renderer* mRen, const fontPack& mFont, std::unordered_
         }
     }
 
+    /* This part of code needs to be replaced with the new header added on the folder "common_source_modules"
+    for not depend on this painter that has this function. The problem is fails in painting after compress the
+    string */
+
+    /* The necessary function is called:
+    categorizeCode_token() for the U16 String, and
+    get_tokenNameF_int() for watch the category name
+
+    visit: "common_source_modules/codeTokenType.h" and with .c for watch the source code
+    and for see what it does this functions. */
+
     std::string StyleIDECase = "SText";
     std::string StyleIDECase_p;
     std::pair<char16_t,bool> cooldownChar16 = {0, false};
@@ -578,6 +589,10 @@ int main(){
                     break;
                 case SDL_EVENT_WINDOW_RESIZED:
                     SDL_GetWindowSizeInPixels(win, &winSize.first, &winSize.second);
+                    break;
+                case SDL_EVENT_MOUSE_BUTTON_DOWN:
+                    if(event.button.button == SDL_BUTTON_LEFT){
+                    }
                     break;
             }
         }

@@ -433,22 +433,23 @@ void ArrayDText_UTF16(SDL_Renderer* mRen, const fontPack& mFont, std::unordered_
         CPaint_Comp++;
     }
 
-    std::string StyleIDECase = "SText";
+    std::string styleIDECase = "SText";
+    std::string styleIDECase_prev;
     CPaint_Comp = 0;
     for(const char16_t& mChar16 : DispCompressTF_U16){
-        StyleIDECase = get_tokenNameF_int(mtpr_textPaint_Comp[CPaint_Comp]);
-        auto StyleFindIter = dlTextStyle.find(StyleIDECase);
+        styleIDECase = get_tokenNameF_int(mtpr_textPaint_Comp[CPaint_Comp]);
+        auto styleFindIter = dlTextStyle.find(styleIDECase);
 
-        if(StyleFindIter == dlTextStyle.end()){
-            if(StyleIDECase == "SPunctuationD") StyleFindIter = dlTextStyle.find("SPunctuation");
-            StyleFindIter = StyleFindIter != dlTextStyle.end() ? StyleFindIter : dlTextStyle.find("SText");
+        if(styleFindIter == dlTextStyle.end()){
+            if(styleIDECase == "SPunctuationD") styleFindIter = dlTextStyle.find("SPunctuation");
+            styleFindIter = styleFindIter != dlTextStyle.end() ? styleFindIter : dlTextStyle.find("SText");
         }
-        if(StyleFindIter == dlTextStyle.end()){
+        if(styleFindIter == dlTextStyle.end()){
             std::cerr << "Looks like the *SText* style autoinclusion failed (ArrayDText / err 1)" << std::endl;
             if(mtexDChar != nullptr) SDL_DestroyTexture(mtexDChar);
             return;
         }
-        Style2C = {StyleFindIter->second.first, StyleFindIter->second.second};
+        Style2C = {styleFindIter->second.first, styleFindIter->second.second};
 
         switch(static_cast<uint16_t>(mChar16)){
             case 0x000D:
@@ -482,7 +483,7 @@ void ArrayDText_UTF16(SDL_Renderer* mRen, const fontPack& mFont, std::unordered_
                 takedSpChar = true;
                 break;
             default:
-                if(contLoop || mChar16 != prevChar){
+                if(contLoop || mChar16 != prevChar || styleIDECase != styleIDECase_prev){
                     mipDChar = customizeCharFF(mFont, static_cast<uint16_t>(mChar16), Style2C.first, Style2C.second);
 
                     if(mtexDChar != nullptr) SDL_DestroyTexture(mtexDChar);
@@ -498,6 +499,7 @@ void ArrayDText_UTF16(SDL_Renderer* mRen, const fontPack& mFont, std::unordered_
 
         if(contLoop) contLoop = false;
         prevChar = mChar16;
+        styleIDECase_prev = styleIDECase;
         if(takedSpChar) takedSpChar = false;
         CPaint_Comp++;
     }
@@ -548,6 +550,7 @@ int main(){
     bool quit = false;
     SDL_Event event;
     SDL_SetRenderDrawColor(ren, 0, 0, 0, 255);
+    std::u16string mCar_Text = UTF8_to_16b_SS("#include <stdio.h>\r\n#include <stdlib.h>\r\nint main(){\r\n\tchar* stringExample = (char*)malloc(12);\r\n\tif(stringExample != NULL){\r\n\t\tstringExample = \"Hello World\";\r\n\t\tprintf(%s, stringExample);\r\n\t\tfree(stringExample);\r\n\t}\r\n\treturn 0;\r\n}\r\n");
 
     // Fonts
     const fontPack FNT_Premier_Classic = importFont_root("font/fontN-Wwes-12-20 Premier_Classic.lct", 12, 20, 0x20, 0xFF, 2);
@@ -578,7 +581,7 @@ int main(){
             ren,
             FNT_Premier_Classic,
             mDLStyle,
-            UTF8_to_16b_SS("#include <stdio.h>\r\n#include <stdlib.h>\r\nint main(){\r\n\tchar* stringExample = (char*)malloc(12);\r\n\tif(stringExample != NULL){\r\n\t\tstringExample = \"Hello World\";\r\n\t\tprintf(%s, stringExample);\r\n\t\tfree(stringExample);\r\n\t}\r\n\treturn 0;\r\n}\r\n"),
+            mCar_Text,
             winSize.first, winSize.second, 0, 30, 0, 0, 1.0f
         );
 

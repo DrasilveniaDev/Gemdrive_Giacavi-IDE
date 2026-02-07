@@ -13,6 +13,7 @@ extern "C"{
     #include "LCT_decodeC.h"
     #include "unicode_kit.h"
     #include "styleButtonFlow.h"
+    #include "codeTokenType.h"
 }
 
 // Text Codec Tools
@@ -357,6 +358,15 @@ std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> importDataList(st
 
 int tabLSize = 4; // The tab size will be 4 by default. If this changes, will display another thing.
 
+std::vector<int> categorizeCode_token_VEC(const std::u16string& mTCode_U16){
+    int* mTokenCategoryString = categorizeCode_token(reinterpret_cast<const uint16_t*>(mTCode_U16.c_str()));
+    if(mTokenCategoryString == nullptr) return {};
+
+    std::vector<int> mpvTCS(mTokenCategoryString, mTokenCategoryString + mTCode_U16.size() + 1);
+    free(mTokenCategoryString); 
+    return mpvTCS;
+}
+
 // ArrayDText_UTF16(ren, FNT_Premier_Classic, importDataList("data/mainTheme.csv"), u"UTF-16 Example", 1024, 680, 0, 120, roadX, roadY, 1.0f);
 
 void ArrayDText_UTF16(SDL_Renderer* mRen, const fontPack& mFont, std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> dlTextStyle, const std::u16string& textFile_U16, int screen_w, int screen_h, int dx, int dy, int cx, int cy, float resizeDC){
@@ -377,6 +387,13 @@ void ArrayDText_UTF16(SDL_Renderer* mRen, const fontPack& mFont, std::unordered_
         return;
     }
 
+    std::vector<int> mtpr_textPaint = categorizeCode_token_VEC(textFile_U16);
+
+    if(mtpr_textPaint.empty() || mtpr_textPaint.size() - 1 != textFile_U16.size()){
+        std::cerr << "Paint Vector failed or it was not the same size as the text (ArrayDText / err 0)" << std::endl;
+        return;
+    }
+
     float ACD_x = static_cast<float>(dx);
     float ACD_y = static_cast<float>(dy);
     const std::pair<float,float> CDS = {static_cast<float>(mFont.charW) * resizeDC, static_cast<float>(mFont.charH) * resizeDC};
@@ -385,94 +402,53 @@ void ArrayDText_UTF16(SDL_Renderer* mRen, const fontPack& mFont, std::unordered_
     bool takedSpChar = false;
     SDL_FRect mduCharRect = {0.0f, 0.0f, 0.0f, 0.0f};
 
-    std::u16string DispCompressTF_U16;
+    std::u16string DispCompressTF_U16; // This is the cutted part.
+    std::vector<int> mtpr_textPaint_Comp;
     const std::pair<int,int> CCDC = {
         static_cast<int>(std::ceil((screen_w - dx) / CDS.first)),
         static_cast<int>(std::ceil((screen_h - dy) / CDS.second))
     };
     std::pair<int,int> CharUbic = {0,0};
 
+    int CPaint_Comp = 0;
     for(const char16_t& mChar16_p : textFile_U16){
         switch(mChar16_p){
             case 0x000D:
             case 0x000A:
-                if(CharUbic.second - cy >= 0 && CharUbic.second - cy < CCDC.second) DispCompressTF_U16.push_back(mChar16_p);
+                if(CharUbic.second - cy >= 0 && CharUbic.second - cy < CCDC.second){
+                    DispCompressTF_U16.push_back(mChar16_p);
+                    mtpr_textPaint_Comp.push_back(mtpr_textPaint[CPaint_Comp]);
+                }
                 CharUbic.first = 0;
                 if(mChar16_p == 0x000A) CharUbic.second++;
                 break;
             default:
-                if(CharUbic.first - cx >= 0 && CharUbic.first - cx < CCDC.first && CharUbic.second - cy >= 0 && CharUbic.second - cy < CCDC.second) DispCompressTF_U16.push_back(mChar16_p);
+                if(CharUbic.first - cx >= 0 && CharUbic.first - cx < CCDC.first && CharUbic.second - cy >= 0 && CharUbic.second - cy < CCDC.second){
+                    DispCompressTF_U16.push_back(mChar16_p);
+                    mtpr_textPaint_Comp.push_back(mtpr_textPaint[CPaint_Comp]);
+                }
                 CharUbic.first += mChar16_p == 0x0009 ? ::tabLSize : 1;
                 break;
         }
+        CPaint_Comp++;
     }
 
-    /* This part of code needs to be replaced with the new header added on the folder "common_source_modules"
-    for not depend on this painter that has this function. The problem is fails in painting after compress the
-    string */
-
-    /* The necessary function is called:
-    categorizeCode_token() for the U16 String, and
-    get_tokenNameF_int() for watch the category name
-
-    visit: "common_source_modules/codeTokenType.h" and with .c for watch the source code
-    and for see what it does this functions. */
-
     std::string StyleIDECase = "SText";
-    std::string StyleIDECase_p;
-    std::pair<char16_t,bool> cooldownChar16 = {0, false};
+    CPaint_Comp = 0;
     for(const char16_t& mChar16 : DispCompressTF_U16){
-        if(mChar16 == 0x000A && cooldownChar16 != std::pair<char16_t,bool>{0, false}){
-            StyleIDECase = "SText";
-            cooldownChar16 = {0, false};
-        }
-        if(!cooldownChar16.second || mChar16 == cooldownChar16.first){
-            StyleIDECase = "SText";
-            std::pair<char16_t,bool> cooldownChar16_fd = cooldownChar16; // Finded
-            cooldownChar16 = {0, false};
-            switch(mChar16){
-                case 0x0023:
-                    if(dlTextStyle.find("SDeclaration") != dlTextStyle.end()){
-                        StyleIDECase = "SDeclaration";
-                        cooldownChar16 = {0x000A, true};
-                    }
-                    break;
-                case 0x0028:
-                case 0x0029:
-                case 0x005B:
-                case 0x005D:
-                case 0x007B:
-                case 0x007D:
-                    if(dlTextStyle.find("SPunctuation") != dlTextStyle.end()){
-                        StyleIDECase = "SPunctuation";
-                        cooldownChar16 = {0, false};
-                    }
-                    break;
-                case 0x002C:
-                case 0x002E:
-                case 0x003A:
-                case 0x003B:
-                    if(dlTextStyle.find("SPunctuation") != dlTextStyle.end()){
-                        StyleIDECase = dlTextStyle.find("SPunctuationC") != dlTextStyle.end() ? "SPunctuationC" : "SPunctuation";
-                        cooldownChar16 = {0, false};
-                    }
-                    break;
-                case 0x0022:
-                case 0x0027:
-                    StyleIDECase = dlTextStyle.find("SString") != dlTextStyle.end() && mChar16 == 0x0022 ? "SString" : (dlTextStyle.find("SChar") != dlTextStyle.end() && mChar16 == 0x0027 ? "SChar" : "SText");
-                    cooldownChar16 = StyleIDECase == "SString" ? std::pair<char16_t,bool>{0x0022, true} : (StyleIDECase == "SChar" ? std::pair<char16_t,bool>{0x0027, true} : std::pair<char16_t,bool>{0, false});
-                    if(cooldownChar16_fd.second == true) cooldownChar16.second = false;
-                    break;
-                default:
-                    StyleIDECase = "SText";
-                    cooldownChar16 = {0, false};
-            }
-        }
+        StyleIDECase = get_tokenNameF_int(mtpr_textPaint_Comp[CPaint_Comp]);
+        auto StyleFindIter = dlTextStyle.find(StyleIDECase);
 
-        if(StyleIDECase_p.empty() || StyleIDECase_p != StyleIDECase){
-            StyleAClass = dlTextStyle.find(StyleIDECase);
-            Style2C = StyleAClass->second;
+        if(StyleFindIter == dlTextStyle.end()){
+            if(StyleIDECase == "SPunctuationD") StyleFindIter = dlTextStyle.find("SPunctuation");
+            StyleFindIter = StyleFindIter != dlTextStyle.end() ? StyleFindIter : dlTextStyle.find("SText");
         }
+        if(StyleFindIter == dlTextStyle.end()){
+            std::cerr << "Looks like the *SText* style autoinclusion failed (ArrayDText / err 1)" << std::endl;
+            if(mtexDChar != nullptr) SDL_DestroyTexture(mtexDChar);
+            return;
+        }
+        Style2C = {StyleFindIter->second.first, StyleFindIter->second.second};
 
         switch(static_cast<uint16_t>(mChar16)){
             case 0x000D:
@@ -522,8 +498,8 @@ void ArrayDText_UTF16(SDL_Renderer* mRen, const fontPack& mFont, std::unordered_
 
         if(contLoop) contLoop = false;
         prevChar = mChar16;
-        StyleIDECase_p = StyleIDECase;
         if(takedSpChar) takedSpChar = false;
+        CPaint_Comp++;
     }
 
     SDL_SetRenderDrawColor(mRen, ((Style2C.first >> 16) & 0xFF), ((Style2C.first >> 8) & 0xFF), (Style2C.first & 0xFF), ((Style2C.first >> 24) & 0xFF));

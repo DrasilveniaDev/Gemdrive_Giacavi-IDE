@@ -524,6 +524,33 @@ void createButtonFlow_tex_X(SDL_Renderer* mRen, int ChaC, std::vector<uint32_t> 
     createButtonFlow_tex(mRen, ChaC, mFlowCFill.data(), mFCF_size, mFlowCBord.data(), mFCB_size, posX, posY, miW, miH, bordS);
 }
 
+struct SPFontPack{ // Smart Portable Font Pack
+    std::string name;
+    std::pair<int,int> charDS; // Optional Use
+    std::unordered_map<std::string, fontPack>;
+};
+
+SPFontPack loadDefault_SPFont(){
+    SPFontPack mSPFont;
+    const std::string fs_Err0 = "Looks like the the Font Data Identifier Parser was deleted or cleared.\nThis is a sacred file and it helps you to charge fonts and for save other configurations\n\nIf the file is in the recycle bin (trash), restore it or else, the app will not run.\nThe root of the file is assigned as: font/.root.fnt.csv (loadDefault_SPFont / err 0)";
+
+    std::ifstream mFPars("font/.root.fnt.csv");
+    if(!mFPars.is_open()){
+        std::cerr << fs_Err0 << std::endl;
+        return mSPFont;
+    }
+
+    std::string mFPars_container((std::istreambuf_iterator<char>(mFPars)), std::istreambuf_iterator<char>());
+    mFPars.close();
+    if(mFPars_container.empty()){
+        std::cerr << fs_Err0 << std::endl;
+        return mSPFont;
+    }
+
+    // On Developing
+    // Build the file parser reader
+}
+
 int main(){
     SDL_Window *win = nullptr;
     SDL_Renderer *ren = nullptr;

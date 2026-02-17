@@ -526,13 +526,17 @@ void createButtonFlow_tex_X(SDL_Renderer* mRen, int ChaC, std::vector<uint32_t> 
 
 struct SPFontPack{ // Smart Portable Font Pack
     std::string name;
-    std::pair<int,int> charDS; // Optional Use
+    std::pair<int,int> charBS; // Optional Use (Charbox Size)
+    float charDS; // Optional Use (Char Display Size)
     std::unordered_map<std::string, fontPack>;
 };
 
 SPFontPack load_SPFont(std::string ObjName){
     SPFontPack mSPFont;
-    const std::string fs_Err0 = "Looks like the the Font Data Identifier Parser was deleted or cleared.\nThis is a sacred file and it helps you to charge fonts and for save other configurations\n\nIf the file is in the recycle bin (trash), restore it or else, the app will not run.\nThe root of the file is assigned as: font/.root.fnt.csv (load_SPFont / err 0)";
+    const std::string fs_Err0 = "Looks like the the Font Data Identifier Parser was deleted or cleared.\nThis is a sacred file and it helps you to charge fonts and for save other configurations\n\nIf the file is in the recycle bin (trash), restore it or else, the app will not run.\nThe root of the file is assigned as: font/.root.fnt.csv (load_SPFont / err 0.0)";
+    const std::string fs_Err4 = "Deftoken name is all spaced (load_SPFont / err 4)";
+    const std::string fs_Err5 = "Parser ended too early (load_SPFont / err 5)";
+    const std::string fs_Err8 = "Negative value on Substring function (load_SPFont / err 8)";
 
     std::ifstream mFPars("font/.root.fnt.csv");
     if(!mFPars.is_open()){
@@ -546,6 +550,10 @@ SPFontPack load_SPFont(std::string ObjName){
         std::cerr << fs_Err0 << std::endl;
         return mSPFont;
     }
+    if(ObjName.empty()){
+        std::cerr << "Font name or token inserted is empty (load_SPFont / err 0.1)" << std::endl;
+        return mSPFont;
+    }
 
     // pobj = parser object
     struct dataFontDisp_pobj{
@@ -553,23 +561,223 @@ SPFontPack load_SPFont(std::string ObjName){
         float sizeDisp;
     };
     std::unordered_map<std::string, dataFontDisp_pobj> ipv_FDefaults;
+    std::string defTName;
     int C = 0;
-    for(int L = 0; L < 2; L++){
+    while(mFPars_conta[C] != '\r' || mFPars_conta[C] != '\n'){
         dataFontDisp_pobj mDFD_PO;
-        mDFD_PO.name = mFPars_conta.substr(C, C + 3);
+        defTName = mFPars_conta.substr(C, 4);
         C += 4;
         if(mFPars_conta[C] != ' '){
             std::cerr << "Default's tokens must have 4 characters or the parser ended too early (load_SPFont / err 1.0)" << std::endl;
             return mSPFont;
         }
 
+        if(defTName.size() != 4){
+            std::cerr << "variable: \"defTName\" is not 4 char length (load_SPFont / err 2)" << std::endl;
+            return mSPFont;
+        }
         for(int CHC = 0, CHC < 4, CHC++){
-            if(mDFD_PO[CHC] == ' '){
+            if(defTName[CHC] == ' '){
                 std::cerr << "Default's tokens must have 4 characters (load_SPFont / err 1.1)" << std::endl;
                 return mSPFont;
             }
         }
+        C++;
+
+        mDFD_PO.name.clear();
+        int StartText = C;
+        while(mFPars_conta[C] != '$'){
+            C++;
+            if(C >= static_cast<int>(mFPars_conta.size()){
+                std::cerr << "The character '$' was never found during parsing (load_SPFont / err 3)" << std::endl;
+                return mSPFont;
+            }
+        }
+        if(C - StartText < 0){
+            std::cerr << fs_Err8 << std::endl;
+            return mSPFont;
+        }
+        mDFD_PO.name = mFPars_conta.substr(StartText, C - StartText);
+        C++;
+        if(mDFD_PO.name.empty()){
+            std::cerr << "Deftoken name is empty (load_SPFont / err 4)" << std::endl;
+            return mSPFont;
+        }
+        bool SCompDone = false;
+        if(mDFD_PO.name[mDFD_PO.name.size() - 1] == ' '){
+            for(size_t CHC = mDFD_PO.name.size(); CHC > 0; CHC--){
+                if(mDFD_PO.name[CHC - 1] != ' '){
+                    SCompDone = true;
+                    mDFD_PO.name = mDFD_PO.name.substr(0, CHC);
+                    break;
+                }
+            }
+            if(!SCompDone) std::cerr << fs_Err4 << std::endl;
+        }
+        if(mDFD_PO.name[0] == ' ' && SCompDone){
+            SCompDone = false;
+            for(size_t CHC = 0; CHC < mDFD_PO.name.size(); CHC++){
+                if(mDFD_PO.name[CHC] != ' '){
+                    SCompDone = true;
+                    mDFD_PO.name = mDFD_PO.name.substr(CHC, mDFD_PO.name.size() - CHC);
+                    break;
+                }
+            }
+            if(!SCompDone) std::cerr << fs_Err4 << std::endl;
+        }
+        if(!SCompDone) return mSPFont;
+
+        while(mFPars_conta[C] == ' ' && C < static_cast<int>(mFPars_conta.size())) C++;
+        if(C >= static_cast<int>(mFPars_conta.size())){
+            std::cerr << fs_Err5 << std::endl;
+            return mSPFont;
+        }
+
+        if(mFPars_conta[C] == '\r' || mFPars_conta[C] == '\n'){
+            mDFD_PO.sizeDisp = 1.0f;
+            ipv_FDefaults[defTName] = mDFD_PO;
+            C += mFPars_conta[C] == '\r' ? 2 : 1;
+            continue;
+        }
+        StartText = C;
+        std::string STRF_conv;
+        while(mFPars_conta[C] != '\r' && mFPars_conta[C] != '\n'){
+            C++
+            if(C >= static_cast<int>(mFPars_conta.size())){
+                std::cerr << fs_Err5 << std::endl;
+                return mSPFont;
+            }            
+        }
+        if(C - StartText < 0){
+            std::cerr << fs_Err8 << std::endl;
+            return mSPFont;
+        }
+        STRF_conv = mFPars_conta.substr(StartText, C - StartText);
+        try{
+            mDFD_PO.sizeDisp = std::stof(STRF_conv);
+        }catch(...){
+            std::cerr << "miswritten or corrupted float number writted on the parser (load_SPFont / err 6)" << std::endl;
+            return mSPFont;
+        }
+        ipv_FDefaults[defTName] = mDFD_PO;
+        C += mFPars_conta[C] == '\r' ? 2 : 1;
     }
+    char mChar = mFPars_conta[C];
+    const std::string fs_Err7 = "Unexpected character after end (load_SPFont / err 7)";
+    if(mChar == '\r' || mChar == '\n'){
+        C += mChar == '\r' ? 2 : 1;
+    }else{
+        std::cerr << fs_Err7 << std::endl;
+        return mSPFont;
+    }
+
+    while(mFPars_conta[C] == '\r' || mFPars_conta[C] == '\n'){
+        C += mFPars_conta[C] == '\r' ? 2 : 1;
+    }
+
+    std::unordered_map<std::string, std::string> ipv_FRoots; // {Font Name, Font Root}
+    std::pair<std::string, std::string> FRoots_pobj;
+    int StartName = C;
+    while(C < mFPars_conta.size() && mFPars_conta[C] != '\r' && mFPars_conta[C] != '\n'){
+        StartName = C;
+        while(mFPars_conta[C] != '$'){
+            C++;
+            if(C >= static_cast<int>(mFPars_conta.size()){
+                std::cerr << "The character '$' was never found during parsing (load_SPFont / err 3)" << std::endl;
+                return mSPFont;
+            }
+        }
+        if(C - StartName < 0){
+            std::cerr << fs_Err8 << std::endl;
+            return mSPFont;
+        }
+        FRoots_pobj.first = mFPars_conta.substr(StartName, C - StartName);
+        if(FRoots_pobj.first.empty()){
+            std::cout << "Font Name is empty or failed to load (load_SPFont / err 9)" << std::endl;
+            return mSPFont;
+        }
+
+        bool SCompDone = false;
+        if(FRoots_pobj.first[FRoots_pobj.first.size() - 1] == ' '){
+            for(size_t CHC = FRoots_pobj.first.size(); CHC > 0; CHC--){
+                if(FRoots_pobj.first[CHC - 1] != ' '){
+                    SCompDone = true;
+                    FRoots_pobj.first = FRoots_pobj.first.substr(0, CHC);
+                    break;
+                }
+            }
+            if(!SCompDone) std::cerr << fs_Err4 << std::endl;
+        }
+        if(FRoots_pobj.first[0] == ' ' && SCompDone){
+            SCompDone = false;
+            for(size_t CHC = 0; CHC < FRoots_pobj.first.size(); CHC++){
+                if(FRoots_pobj.first[CHC] != ' '){
+                    SCompDone = true;
+                    FRoots_pobj.first = FRoots_pobj.first.substr(CHC, FRoots_pobj.first.size() - CHC);
+                    break;
+                }
+            }
+            if(!SCompDone) std::cerr << fs_Err4 << std::endl;
+        }
+        if(!SCompDone) return mSPFont;
+
+        C++
+        while(mFPars_conta[C] == ' ' && C < mFPars_conta.size()) C++;
+        if(C >= mFPars_conta.size()){
+            std::cerr << fs_Err5 << std::endl;
+            return mSPFont;
+        }
+
+        StartName = C;
+        while(mFPars_conta[C] != '\r' || mFPars_conta[C] != '\n' || C < mFPars_conta.size()){
+            C++
+        }
+        if(C - StartName < 0){
+            std::cerr << fs_Err8 << std::endl;
+            return mSPFont;
+        }
+        FRoots_pobj.second = mFPars_conta.substr(StartName, C - StartName);
+
+        SCompDone = false;
+        if(FRoots_pobj.second[FRoots_pobj.second.size() - 1] == ' '){
+            for(size_t CHC = FRoots_pobj.second.size(); CHC > 0; CHC--){
+                if(FRoots_pobj.second[CHC - 1] != ' '){
+                    SCompDone = true;
+                    FRoots_pobj.second = FRoots_pobj.first.substr(0, CHC);
+                    break;
+                }
+            }
+            if(!SCompDone){
+                std::cerr << fs_Err4 << std::endl;
+                return mSPFont;
+            }
+        }
+
+        ipv_FRoots[FRoots_pobj.first] = FRoots_pobj.second;
+        if(C < mFPars_conta.size()){
+            mChar = mFPars_conta[C];
+            if(mChar == '\r' || mChar == '\n'){
+                C += mFPars_conta[C] == '\r' ? 2 : 1;
+            }else{
+                std::cerr << fs_Err7 << std::endl;
+                return mSPFont;
+            }
+        }
+    }
+
+    std::string mfit_FontToken2P; // Very Necesary
+    if(ObjName[0] == '#'){
+        auto FDefaultFind = ipv_FDefaults.find(ObjName.substr(1, 4));
+        if(FDefaultFind != ipv_FDefaults.end()){
+            mfit_FontToken2P = FDefaultFint->second.name;
+        }else{
+            std::cerr << "Default token name doesn't exist on the parser (load_SPFont / err 10)";
+            return mSPFont;
+        }
+    }else{
+        mfit_FontToken2P = ObjName;
+    }
+    // Not ended yet
 }
 
 int main(){

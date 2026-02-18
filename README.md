@@ -1,5 +1,5 @@
 # Gemdrive Giacavi IDE
-## Version: 1.0a (BS 21)
+## Version: 1.0a (BS 22)
 The rules for the notation of the versions are the followings rules:
 
 **Numeral Version:** 1.2.3
@@ -26,3 +26,5 @@ This build version will always go with the parenthesis and it goes after the ver
 5. Use the English language in the first versions, and add more languages when the project becomes more advanced. Contributors who speak other languages may help with translations at that stage. **[NOT NOW]**
 6. **Gemdrive** (me) is the only authorized company for change the official name or icon.
 7. For specify a version, never ad 'v' prefix. Just the version, but, there are suffixes for some cases: '-a' (f.e. *1.0a*) is for **Alpha** version, '-b' (f.e. *1.0b*) is for **Beta** version and optionally '-n' for **Nighty** versions. no suffix means it's a stable version.
+8. Do not fix the *.csv* syntaxis because it was not made for tables. It was made for parse and load some other things necesary for this IDE.
+9. Do not add more fonts. The **LCT** image format it's not public by now, but more soon will be.

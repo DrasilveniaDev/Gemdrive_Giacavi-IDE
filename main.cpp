@@ -531,6 +531,41 @@ struct SPFontPack{ // Smart Portable Font Pack
     std::unordered_map<std::string, fontPack>;
 };
 
+SPFontPack loadResource_SPFont(std::string mRoot){
+    const std::string fs_Err0 = "Smart Font Resource file was deleted, cleared or doesn't exist.\nThe type of file is \".fnt.csv\" for know (loadResource_SPFont / err 0)";
+    const std::string fs_Err2 = "Reader ended too early (loadResource_SPFont / err 2)";
+    SPFontPack mSPFont;
+    std::ifstream mSPFResource_F("font/" + mRoot);
+    if(!mSPFResource_F.is_open()){
+        std::cerr << fs_Err0 << std::endl;
+        return mSPFont;
+    }
+
+    std::string mSPFResource_S((std::istreambuf_iterator<char>(mSPFResource_F)), std::ifstreambuf_iterator<char>());
+    mSPFResource_F.close();
+    if(mSPFResource_S.empty()){
+        std::cerr << fs_Err0 << std::endl;
+        return mSPFont;
+    }
+    if(mRoot.empty()){
+        std::cerr << "Root is not inserted on loadResource_SPFont function (loadResource_SPFont / err 1)" << std::endl;
+        return mSPFont;
+    }
+
+    // Remember: mSPFResource_S; S means String
+    int C = 0;
+    int S = 0;
+    char dsi_Char = mSPFResource_S[C];
+    while(dsi_Char != '\r' && dsi_Char != '\n' && dsi_Char != '`'){
+        C++;
+        if(C >= mSPFResource_S.size()){
+            std::cout << fs_Err2 << std::endl;
+            return mSPFont;
+        }
+    }
+    mSPFont.name = mSPFResource_S.substr(S, C);
+}
+
 SPFontPack load_SPFont(std::string ObjName){
     SPFontPack mSPFont;
     const std::string fs_Err0 = "Looks like the the Font Data Identifier Parser was deleted or cleared.\nThis is a sacred file and it helps you to charge fonts and for save other configurations\n\nIf the file is in the recycle bin (trash), restore it or else, the app will not run.\nThe root of the file is assigned as: font/.root.fnt.csv (load_SPFont / err 0.0)";
@@ -771,13 +806,20 @@ SPFontPack load_SPFont(std::string ObjName){
         if(FDefaultFind != ipv_FDefaults.end()){
             mfit_FontToken2P = FDefaultFint->second.name;
         }else{
-            std::cerr << "Default token name doesn't exist on the parser (load_SPFont / err 10)";
+            std::cerr << "Default token name doesn't exist on the parser (load_SPFont / err 10)" << std::endl;
             return mSPFont;
         }
     }else{
         mfit_FontToken2P = ObjName;
     }
-    // Not ended yet
+    auto SFRootFind = ipv_FRoots.find(mfit_FontToken2P); 
+    if(SFRootFind != ipv_FRoots.end()){
+        mfit_FontToken2P = SFRootFind->second;
+        mSPFont = loadResource_SPFont(mfit_FontToken2P);
+        return mSPFont;
+    }
+    std::cerr << "Root or token doesn't exist on the parser (load_SPFont / err 11)" << std::endl;
+    return mSPFont;
 }
 
 int main(){

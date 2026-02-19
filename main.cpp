@@ -531,9 +531,10 @@ struct SPFontPack{ // Smart Portable Font Pack
     std::unordered_map<std::string, fontPack>;
 };
 
-SPFontPack loadResource_SPFont(std::string mRoot){
+SPFontPack loadResource_SPFont(std::string mRoot, float ivDSize){
     const std::string fs_Err0 = "Smart Font Resource file was deleted, cleared or doesn't exist.\nThe type of file is \".fnt.csv\" for know (loadResource_SPFont / err 0)";
     const std::string fs_Err2 = "Reader ended too early (loadResource_SPFont / err 2)";
+
     SPFontPack mSPFont;
     std::ifstream mSPFResource_F("font/" + mRoot);
     if(!mSPFResource_F.is_open()){
@@ -564,6 +565,97 @@ SPFontPack loadResource_SPFont(std::string mRoot){
         }
     }
     mSPFont.name = mSPFResource_S.substr(S, C);
+
+    bool SCPass = false;
+    if(mSPFont.name[mSPFont.name.size() - 1] == ' '){
+        for(size_t CHC = mSPFont.name.size(); CHC > 0; CHC--){
+            if(mSPFont.name[CHC - 1] != ' '){
+                SCPass = true;
+                mSPFont.name = mSPFont.name.substr(0, CHC);
+                break;
+            }
+        }
+        if(!SCPass){
+            std::cerr << "Name is all spaced (loadResource_SPFont / err 3.0)" << std::endl;
+            return mSPFont;
+        }
+    }
+
+    while(mSPFResource_S[C] != '\r' || mSPFResource_S[C] != '\n'){
+        C++;
+        if(C >= mSPFResource_S.size()){
+            std::cerr << fs_Err2 << std::endl;
+            return mSPFont;
+        }
+    }
+
+    while(mSPFResource_S[C] == '\r' || mSPFResource_S[C] == '\n'){
+        C += mSPFResource_S[C] == '\r' ? 2 : 1;
+        if(C >= mSPFResource_S.size()){
+            std::cerr << fs_Err2 << std::endl; 
+            return mSPFont;
+        }
+    }
+
+    std::string stoi_NWidth;
+    std::string stoi_NHeight;
+
+    S = C;
+    while(mSPFResource_S[C] != ' '){
+        C++;
+        if(C >= mSPFResource_S.size()){
+            std::cerr << fs_Err2 << std::endl;
+            return mSPFont;
+        }
+        if(mSPFResource_S[C] == '\r' || mSPFResource[C] == '\n'){
+            std::cerr << "Not enough Numbers. It needs 2 (loadResource_SPFont / err 3.1)" << std::endl;
+            return mSPFont;
+        }
+    }
+    stoi_NWidth = mSPFResource_S.substr(S, C - S);
+    do{
+        S = ++C;
+    }while(mSPFResource_S[C] == ' ');
+
+    SCPass = false;
+    S = C;
+    while(true){
+        switch(mSPFResource_S[C]){
+            case ' ':
+            case '\r':
+            case '\n':
+            case '`':
+                SCPass = true;
+                break;
+            default:
+                C++;
+                if(C >= mSPFResource_S.size()){
+                    std::cerr << fs_Err2 << std::endl;
+                    return mSPFont;
+                }
+                break;
+        }
+        if(SCPass) break;
+    }
+    stoi_NHeight = mSPFResource_S.substr(S, C - S);
+
+    if(stoi_NWidth.empty() || stoi_NHeight.empty()){
+        std::cerr << "Number is all spaced or empty (loadResource_SPFont / err 4.0)" << std::endl;
+        return mSPFont;
+    }
+
+    std::pair<int,int> sCDimensions = {0, 0};
+    try{
+        sCDimensions = {std::stoi(stoi_NWidth), std::stoi(stoi_NHeight)};
+    }catch(...){
+        std::cerr << "Numbers inserted on strings aren't numbers (loadResource_SPFont / err 4.1)" << std::endl;
+        return mSPFont;
+    }
+
+    if(sCDimensions.first < 2 || sCDimensions.second < 2){
+        std::cerr << "Character Size readed is too small (loadResource_SPFont / err 4.2)" << std::endl;
+        return mSPFont;
+    }
 }
 
 SPFontPack load_SPFont(std::string ObjName){

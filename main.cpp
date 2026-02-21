@@ -528,12 +528,13 @@ struct SPFontPack{ // Smart Portable Font Pack
     std::string name;
     std::pair<int,int> charBS; // Optional Use (Charbox Size)
     float charDS; // Optional Use (Char Display Size)
-    std::unordered_map<std::string, fontPack>;
+    std::unordered_map<std::string, fontPack> fontPackCPD; // font pack Code Page Display
 };
 
 SPFontPack loadResource_SPFont(std::string mRoot, float ivDSize){
     const std::string fs_Err0 = "Smart Font Resource file was deleted, cleared or doesn't exist.\nThe type of file is \".fnt.csv\" for know (loadResource_SPFont / err 0)";
     const std::string fs_Err2 = "Reader ended too early (loadResource_SPFont / err 2)";
+    const std::string fs_Err4_1 = "Numbers inserted on strings aren't numbers (loadResource_SPFont / err 4.1)";
 
     SPFontPack mSPFont;
     std::ifstream mSPFResource_F("font/" + mRoot);
@@ -588,7 +589,6 @@ SPFontPack loadResource_SPFont(std::string mRoot, float ivDSize){
             return mSPFont;
         }
     }
-
     while(mSPFResource_S[C] == '\r' || mSPFResource_S[C] == '\n'){
         C += mSPFResource_S[C] == '\r' ? 2 : 1;
         if(C >= mSPFResource_S.size()){
@@ -607,7 +607,7 @@ SPFontPack loadResource_SPFont(std::string mRoot, float ivDSize){
             std::cerr << fs_Err2 << std::endl;
             return mSPFont;
         }
-        if(mSPFResource_S[C] == '\r' || mSPFResource[C] == '\n'){
+        if(mSPFResource_S[C] == '\r' || mSPFResource_S[C] == '\n'){
             std::cerr << "Not enough Numbers. It needs 2 (loadResource_SPFont / err 3.1)" << std::endl;
             return mSPFont;
         }
@@ -648,7 +648,7 @@ SPFontPack loadResource_SPFont(std::string mRoot, float ivDSize){
     try{
         sCDimensions = {std::stoi(stoi_NWidth), std::stoi(stoi_NHeight)};
     }catch(...){
-        std::cerr << "Numbers inserted on strings aren't numbers (loadResource_SPFont / err 4.1)" << std::endl;
+        std::cerr << fs_Err4_1 << std::endl;
         return mSPFont;
     }
 
@@ -656,8 +656,141 @@ SPFontPack loadResource_SPFont(std::string mRoot, float ivDSize){
         std::cerr << "Character Size readed is too small (loadResource_SPFont / err 4.2)" << std::endl;
         return mSPFont;
     }
+
+    mSPFont.charBS = sCDimensions;
+
+    while(mSPFResource_S[C] != '\r' || mSPFResource_S[C] != '\n'){
+        C++;
+        if(C >= mSPFResource_S.size()){
+            std::cerr << fs_Err2 << std::endl;
+            return mSPFont;
+        }
+    }
+    while(mSPFResource_S[C] == '\r' || mSPFResource_S[C] == '\n'){
+        C += mSPFResource_S[C] == '\r' ? 2 : 1;
+        if(C >= mSPFResource_S.size()){
+            std::cerr << fs_Err2 << std::endl; 
+            return mSPFont;
+        }
+    }
+
+    std::string tNameFP;
+    struct FPCP_CutFont{
+        int CharCX;
+        int CharCY;
+        int SCD;
+        char CCX;
+    };
+    FPCP_CutFont fxCutFont;
+
+    while(C < mSPFResource_S.size()){
+        S = C;
+        while(mSPFResource_S[C] != ' '){
+            C++;
+            if(C >= mSPFResource_S.size()){
+                std::cerr << fs_Err2 << std::endl;
+                return mSPFont;
+            }
+        }
+
+        tNameFP = mSPFResource_S.substr(S, C - S);
+        C++;
+        if(mSPFResource_S[C] == '"'){
+            S = ++C;
+            while(mSPFResource_S[C] != '"'){
+                C++;
+                if(C >= mSPFResource_S.size()){
+                    std::cerr << fs_Err2 << std::endl;
+                    return mSPFont;
+                }
+            }
+        }else{
+            S = C;
+            while(mSPFResource_S[C] != ' '){
+                C++;
+                if(C >= mSPFResource_S.size()){
+                    std::cerr << fs_Err2 << std::endl;
+                    return mSPFont;
+                }
+            }
+        }
+        std::string FPCP_Root = mSPFResource_S.substr(S, C - S);
+        while(mSPFResource_S[C] != ' '){
+            C++;
+            if(C >= mSPFResource_S.size()){
+                std::cerr << fs_Err2 << std::endl;
+                return mSPFont;
+            }
+        }
+        C++;
+
+        try{
+            S = C;
+            while(mSPFResource_S[C] != ' '){
+                C++;
+                if(C >= mSPFResource_S.size()){
+                    std::cerr << fs_Err2 << std::endl;
+                    return mSPFont;
+                }
+            }
+            fxCutFont.CharCX = std::stoi(mSPFResource_S.substr(S, C - S));
+            S = ++C;
+            while(mSPFResource_S[C] != ' '){
+                C++;
+                if(C >= mSPFResource_S.size()){
+                    std::cerr << fs_Err2 << std::endl;
+                    return mSPFont;
+                }
+            }
+            fxCutFont.CharCY = std::stoi(mSPFResource_S.substr(S, C - S));
+            S = ++C;
+            while(mSPFResource_S[C] != ' '){
+                C++;
+                if(C >= mSPFResource_S.size()){
+                    std::cerr << fs_Err2 << std::endl;
+                    return mSPFont;
+                }
+            }
+            fxCutFont.SCD = std::stoi(mSPFResource_S.substr(S, C - S), nullptr, 0);
+            C++;
+            if(C >= mSPFResource_S.size()){
+                std::cerr << fs_Err2 << std::endl;
+                return mSPFont;
+            }
+            fxCutFont.CCX = mSPFResource_S[C];
+        }catch(...){
+            std::cerr << fs_Err4_1;
+            return mSPFont;
+        }
+
+        int CCXInt = 0;
+        switch(fxCutFont.CCX){
+            case '1':
+            case 'B':
+            case 'b':
+                CCXInt = 1;
+                break;
+            case '2':
+            case 'G':
+            case 'g':
+                CCXInt = 2;
+            case '3':
+            case 'R':
+            case 'r':
+                CCXInt = 3;
+            default:
+                CCXInt = 0;
+        }
+        fontPack cpdFontPack = importFont_root(mSPFResource_S.substr(S, C - S), sCDimensions.first, sCDimensions.second, fxCutFont.SCD, ((fxCutFont.CharCX * fxCutFont.CharCY) + fxCutFont.SCD) - 1, CCXInt);
+        mSPFont.fontPackCPD[tNameFP] = cpdFontPack;
+        C++;
+        if(C < mSPFResource_S.size()) C += mSPFResource_S[C] == '\r' ? 2 : 1;
+    }
+    mSPFont.charDS = ivDSize;
+    return mSPFont;
 }
 
+// Too many errors on this function. Please if you find an error, resolve it and take a pull request for me.
 SPFontPack load_SPFont(std::string ObjName){
     SPFontPack mSPFont;
     const std::string fs_Err0 = "Looks like the the Font Data Identifier Parser was deleted or cleared.\nThis is a sacred file and it helps you to charge fonts and for save other configurations\n\nIf the file is in the recycle bin (trash), restore it or else, the app will not run.\nThe root of the file is assigned as: font/.root.fnt.csv (load_SPFont / err 0.0)";
@@ -908,6 +1041,7 @@ SPFontPack load_SPFont(std::string ObjName){
     if(SFRootFind != ipv_FRoots.end()){
         mfit_FontToken2P = SFRootFind->second;
         mSPFont = loadResource_SPFont(mfit_FontToken2P);
+        if(mSPFont.charDS == 0) std::cerr << "Smart Portable Font failed to extract, is corrupted or it was saved incorrectly (load_SPFont / err 12)" << std::endl;
         return mSPFont;
     }
     std::cerr << "Root or token doesn't exist on the parser (load_SPFont / err 11)" << std::endl;
@@ -950,6 +1084,9 @@ int main(){
 
     std::pair<int,int> winSize;
     SDL_GetWindowSizeInPixels(win, &winSize.first, &winSize.second);
+
+    SPFontPack mSPFP_00 = load_SPFont("Bubblegum"); // Released by testing
+
     while(!quit){
         while(SDL_PollEvent(&event)){
             switch(event.type){

@@ -582,7 +582,7 @@ SPFontPack loadResource_SPFont(std::string mRoot, float ivDSize){
         }
     }
 
-    while(mSPFResource_S[C] != '\r' || mSPFResource_S[C] != '\n'){
+    while(mSPFResource_S[C] != '\r' && mSPFResource_S[C] != '\n'){
         C++;
         if(C >= mSPFResource_S.size()){
             std::cerr << fs_Err2 << std::endl;
@@ -659,7 +659,7 @@ SPFontPack loadResource_SPFont(std::string mRoot, float ivDSize){
 
     mSPFont.charBS = sCDimensions;
 
-    while(mSPFResource_S[C] != '\r' || mSPFResource_S[C] != '\n'){
+    while(mSPFResource_S[C] != '\r' && mSPFResource_S[C] != '\n'){
         C++;
         if(C >= mSPFResource_S.size()){
             std::cerr << fs_Err2 << std::endl;
@@ -683,7 +683,7 @@ SPFontPack loadResource_SPFont(std::string mRoot, float ivDSize){
     };
     FPCP_CutFont fxCutFont;
 
-    while(C < mSPFResource_S.size()){
+    while(C < static_cast<int>(mSPFResource_S.size())){
         S = C;
         while(mSPFResource_S[C] != ' '){
             C++;
@@ -753,7 +753,7 @@ SPFontPack loadResource_SPFont(std::string mRoot, float ivDSize){
             }
             fxCutFont.SCD = std::stoi(mSPFResource_S.substr(S, C - S), nullptr, 0);
             C++;
-            if(C >= mSPFResource_S.size()){
+            if(C >= static_cast<int>(mSPFResource_S.size())){
                 std::cerr << fs_Err2 << std::endl;
                 return mSPFont;
             }
@@ -774,23 +774,24 @@ SPFontPack loadResource_SPFont(std::string mRoot, float ivDSize){
             case 'G':
             case 'g':
                 CCXInt = 2;
+                break;
             case '3':
             case 'R':
             case 'r':
                 CCXInt = 3;
+                break;
             default:
                 CCXInt = 0;
         }
         fontPack cpdFontPack = importFont_root(mSPFResource_S.substr(S, C - S), sCDimensions.first, sCDimensions.second, fxCutFont.SCD, ((fxCutFont.CharCX * fxCutFont.CharCY) + fxCutFont.SCD) - 1, CCXInt);
         mSPFont.fontPackCPD[tNameFP] = cpdFontPack;
         C++;
-        if(C < mSPFResource_S.size()) C += mSPFResource_S[C] == '\r' ? 2 : 1;
+        if(C < static_cast<int>(mSPFResource_S.size())) C += mSPFResource_S[C] == '\r' ? 2 : 1;
     }
     mSPFont.charDS = ivDSize;
     return mSPFont;
 }
 
-// Too many errors on this function. Please if you find an error, resolve it and take a pull request for me.
 SPFontPack load_SPFont(std::string ObjName){
     SPFontPack mSPFont;
     const std::string fs_Err0 = "Looks like the the Font Data Identifier Parser was deleted or cleared.\nThis is a sacred file and it helps you to charge fonts and for save other configurations\n\nIf the file is in the recycle bin (trash), restore it or else, the app will not run.\nThe root of the file is assigned as: font/.root.fnt.csv (load_SPFont / err 0.0)";
@@ -836,7 +837,7 @@ SPFontPack load_SPFont(std::string ObjName){
             std::cerr << "variable: \"defTName\" is not 4 char length (load_SPFont / err 2)" << std::endl;
             return mSPFont;
         }
-        for(int CHC = 0, CHC < 4, CHC++){
+        for(int CHC = 0; CHC < 4; CHC++){
             if(defTName[CHC] == ' '){
                 std::cerr << "Default's tokens must have 4 characters (load_SPFont / err 1.1)" << std::endl;
                 return mSPFont;
@@ -848,7 +849,7 @@ SPFontPack load_SPFont(std::string ObjName){
         int StartText = C;
         while(mFPars_conta[C] != '$'){
             C++;
-            if(C >= static_cast<int>(mFPars_conta.size()){
+            if(C >= static_cast<int>(mFPars_conta.size())){
                 std::cerr << "The character '$' was never found during parsing (load_SPFont / err 3)" << std::endl;
                 return mSPFont;
             }
@@ -902,7 +903,7 @@ SPFontPack load_SPFont(std::string ObjName){
         StartText = C;
         std::string STRF_conv;
         while(mFPars_conta[C] != '\r' && mFPars_conta[C] != '\n'){
-            C++
+            C++;
             if(C >= static_cast<int>(mFPars_conta.size())){
                 std::cerr << fs_Err5 << std::endl;
                 return mSPFont;
@@ -938,7 +939,7 @@ SPFontPack load_SPFont(std::string ObjName){
     std::unordered_map<std::string, std::string> ipv_FRoots; // {Font Name, Font Root}
     std::pair<std::string, std::string> FRoots_pobj;
     int StartName = C;
-    while(C < mFPars_conta.size() && mFPars_conta[C] != '\r' && mFPars_conta[C] != '\n'){
+    while(C < static_cast<int>(mFPars_conta.size()) && mFPars_conta[C] != '\r' && mFPars_conta[C] != '\n'){
         StartName = C;
         while(mFPars_conta[C] != '$'){
             C++;
@@ -981,7 +982,7 @@ SPFontPack load_SPFont(std::string ObjName){
         }
         if(!SCompDone) return mSPFont;
 
-        C++
+        C++;
         while(mFPars_conta[C] == ' ' && C < mFPars_conta.size()) C++;
         if(C >= mFPars_conta.size()){
             std::cerr << fs_Err5 << std::endl;
@@ -989,8 +990,8 @@ SPFontPack load_SPFont(std::string ObjName){
         }
 
         StartName = C;
-        while(mFPars_conta[C] != '\r' || mFPars_conta[C] != '\n' || C < mFPars_conta.size()){
-            C++
+        while(C < static_cast<int>(mFPars_conta.size()) || (mFPars_conta[C] != '\r' && mFPars_conta[C] != '\n')){
+            C++;
         }
         if(C - StartName < 0){
             std::cerr << fs_Err8 << std::endl;
@@ -1029,7 +1030,7 @@ SPFontPack load_SPFont(std::string ObjName){
     if(ObjName[0] == '#'){
         auto FDefaultFind = ipv_FDefaults.find(ObjName.substr(1, 4));
         if(FDefaultFind != ipv_FDefaults.end()){
-            mfit_FontToken2P = FDefaultFint->second.name;
+            mfit_FontToken2P = FDefaultFind->second.name;
         }else{
             std::cerr << "Default token name doesn't exist on the parser (load_SPFont / err 10)" << std::endl;
             return mSPFont;

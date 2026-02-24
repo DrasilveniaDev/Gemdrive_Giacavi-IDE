@@ -543,7 +543,7 @@ SPFontPack loadResource_SPFont(std::string mRoot, float ivDSize){
         return mSPFont;
     }
 
-    std::string mSPFResource_S((std::istreambuf_iterator<char>(mSPFResource_F)), std::ifstreambuf_iterator<char>());
+    std::string mSPFResource_S((std::istreambuf_iterator<char>(mSPFResource_F)), std::istreambuf_iterator<char>());
     mSPFResource_F.close();
     if(mSPFResource_S.empty()){
         std::cerr << fs_Err0 << std::endl;
@@ -783,7 +783,7 @@ SPFontPack loadResource_SPFont(std::string mRoot, float ivDSize){
             default:
                 CCXInt = 0;
         }
-        fontPack cpdFontPack = importFont_root(mSPFResource_S.substr(S, C - S), sCDimensions.first, sCDimensions.second, fxCutFont.SCD, ((fxCutFont.CharCX * fxCutFont.CharCY) + fxCutFont.SCD) - 1, CCXInt);
+        fontPack cpdFontPack = importFont_root(mSPFResource_S.substr(S, C - S).c_str(), sCDimensions.first, sCDimensions.second, fxCutFont.SCD, ((fxCutFont.CharCX * fxCutFont.CharCY) + fxCutFont.SCD) - 1, CCXInt);
         mSPFont.fontPackCPD[tNameFP] = cpdFontPack;
         C++;
         if(C < static_cast<int>(mSPFResource_S.size())) C += mSPFResource_S[C] == '\r' ? 2 : 1;
@@ -799,7 +799,7 @@ SPFontPack load_SPFont(std::string ObjName){
     const std::string fs_Err5 = "Parser ended too early (load_SPFont / err 5)";
     const std::string fs_Err8 = "Negative value on Substring function (load_SPFont / err 8)";
 
-    std::ifstream mFPars("font/.root.fnt.csv");
+    std::ifstream mFPars("font/root.fnt.csv");
     if(!mFPars.is_open()){
         std::cerr << fs_Err0 << std::endl;
         return mSPFont;
@@ -824,8 +824,8 @@ SPFontPack load_SPFont(std::string ObjName){
     std::unordered_map<std::string, dataFontDisp_pobj> ipv_FDefaults;
     std::string defTName;
     int C = 0;
+    dataFontDisp_pobj mDFD_PO;
     while(mFPars_conta[C] != '\r' || mFPars_conta[C] != '\n'){
-        dataFontDisp_pobj mDFD_PO;
         defTName = mFPars_conta.substr(C, 4);
         C += 4;
         if(mFPars_conta[C] != ' '){
@@ -943,7 +943,7 @@ SPFontPack load_SPFont(std::string ObjName){
         StartName = C;
         while(mFPars_conta[C] != '$'){
             C++;
-            if(C >= static_cast<int>(mFPars_conta.size()){
+            if(C >= static_cast<int>(mFPars_conta.size())){
                 std::cerr << "The character '$' was never found during parsing (load_SPFont / err 3)" << std::endl;
                 return mSPFont;
             }
@@ -1041,7 +1041,10 @@ SPFontPack load_SPFont(std::string ObjName){
     auto SFRootFind = ipv_FRoots.find(mfit_FontToken2P); 
     if(SFRootFind != ipv_FRoots.end()){
         mfit_FontToken2P = SFRootFind->second;
-        mSPFont = loadResource_SPFont(mfit_FontToken2P);
+
+        mDFD_PO.sizeDisp = ObjName[0] == '#' ? mDFD_PO.sizeDisp : 1.0f;
+        mSPFont = loadResource_SPFont(mfit_FontToken2P, mDFD_PO.sizeDisp);
+
         if(mSPFont.charDS == 0) std::cerr << "Smart Portable Font failed to extract, is corrupted or it was saved incorrectly (load_SPFont / err 12)" << std::endl;
         return mSPFont;
     }
@@ -1078,7 +1081,7 @@ int main(){
     std::u16string mCar_Text = UTF8_to_16b_SS("#include <stdio.h>\r\n#include <stdlib.h>\r\nint main(){\r\n\tchar* stringExample = (char*)malloc(12);\r\n\tif(stringExample != NULL){\r\n\t\tstringExample = \"Hello World\";\r\n\t\tprintf(%s, stringExample);\r\n\t\tfree(stringExample);\r\n\t}\r\n\treturn 0;\r\n}\r\n");
 
     // Fonts
-    const fontPack FNT_Premier_Classic = importFont_root("font/fontN-Wwes-12-20 Premier_Classic.lct", 12, 20, 0x20, 0xFF, 2);
+    const fontPack FNT_Premier_Classic = importFont_root("font/Premier_Classic_Wwes_12_20_N.lct", 12, 20, 0x20, 0xFF, 2);
 
     // Color Packs
     std::unordered_map<std::string, std::pair<uint32_t, uint32_t>> mDLStyle = importDataList("data/mainTheme.csv");

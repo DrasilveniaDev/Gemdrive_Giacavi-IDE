@@ -783,7 +783,7 @@ SPFontPack loadResource_SPFont(std::string mRoot, float ivDSize){
             default:
                 CCXInt = 0;
         }
-        fontPack cpdFontPack = importFont_root(mSPFResource_S.substr(S, C - S).c_str(), sCDimensions.first, sCDimensions.second, fxCutFont.SCD, ((fxCutFont.CharCX * fxCutFont.CharCY) + fxCutFont.SCD) - 1, CCXInt);
+        fontPack cpdFontPack = importFont_root(FPCP_Root.c_str(), sCDimensions.first, sCDimensions.second, fxCutFont.SCD, ((fxCutFont.CharCX * fxCutFont.CharCY) + fxCutFont.SCD) - 1, CCXInt);
         mSPFont.fontPackCPD[tNameFP] = cpdFontPack;
         C++;
         if(C < static_cast<int>(mSPFResource_S.size())) C += mSPFResource_S[C] == '\r' ? 2 : 1;
@@ -825,7 +825,8 @@ SPFontPack load_SPFont(std::string ObjName){
     std::string defTName;
     int C = 0;
     dataFontDisp_pobj mDFD_PO;
-    while(mFPars_conta[C] != '\r' || mFPars_conta[C] != '\n'){
+    mDFD_PO.sizeDisp = 0.0f;
+    while(mFPars_conta[C] != '\r' && mFPars_conta[C] != '\n'){
         defTName = mFPars_conta.substr(C, 4);
         C += 4;
         if(mFPars_conta[C] != ' '){
@@ -990,7 +991,7 @@ SPFontPack load_SPFont(std::string ObjName){
         }
 
         StartName = C;
-        while(C < static_cast<int>(mFPars_conta.size()) || (mFPars_conta[C] != '\r' && mFPars_conta[C] != '\n')){
+        while(C < static_cast<int>(mFPars_conta.size()) && mFPars_conta[C] != '\r' && mFPars_conta[C] != '\n'){
             C++;
         }
         if(C - StartName < 0){
@@ -1052,6 +1053,35 @@ SPFontPack load_SPFont(std::string ObjName){
     return mSPFont;
 }
 
+void CheckCast_SPFontPack(SPFontPack& mSPFP){
+    std::cout << "Name: " << mSPFP.name << std::endl;
+    std::cout << "Charbox Size: W=" << mSPFP.charBS.first << " H=" << mSPFP.charBS.second << std::endl;
+    std::cout << "Font Display Relative Resize: " << mSPFP.charDS << std::endl;
+    std::cout << "Smart Font Codepages:\n" << std::endl;
+
+    std::pair<std::string, fontPack> FixO;
+    int C = 0;
+    for(const auto& O : mSPFP.fontPackCPD){
+        FixO = O;
+        std::cout << "\t" << FixO.first << "\n\t\tFullW: " << FixO.second.fullW << "\n\t\tFullH: " << FixO.second.fullH << "\n\t\tCharW: " << FixO.second.charW << "\n\t\tCharH: " << FixO.second.charH << std::endl;
+        std::cout << "\t\tStart Character: " << FixO.second.valS << "\n\t\tEnd Char: " << FixO.second.valE << std::endl;
+        if(FixO.second.fullW % FixO.second.charW != 0 || FixO.second.fullH % FixO.second.charH != 0) std::cout << "\t\t[FONT IMAGE NOT ALIGNED]" << std::endl;
+
+        std::cout << "\n\t\traw data (Hexadecimal):" << std::endl;
+        C = 0;
+        for(const unsigned char& BRD : FixO.second.raw){
+            std::cout << std::hex << (BRD < 0x10 ? "0" : "") << ((int)BRD & 0xFF) << " ";
+            if(++C == 16){
+                std::cout << std::endl;
+                C = 0;
+            }
+        }
+        std::cout << "\n" << std::endl;
+    }
+
+    std::cout << std::dec;
+}
+
 int main(){
     SDL_Window *win = nullptr;
     SDL_Renderer *ren = nullptr;
@@ -1090,6 +1120,7 @@ int main(){
     SDL_GetWindowSizeInPixels(win, &winSize.first, &winSize.second);
 
     SPFontPack mSPFP_00 = load_SPFont("Bubblegum"); // Released by testing
+    CheckCast_SPFontPack(mSPFP_00); // For an important debugging
 
     while(!quit){
         while(SDL_PollEvent(&event)){

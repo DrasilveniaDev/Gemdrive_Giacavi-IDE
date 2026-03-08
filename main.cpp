@@ -537,6 +537,7 @@ SPFontPack loadResource_SPFont(std::string mRoot, float ivDSize){
     const std::string fs_Err4_1 = "Numbers inserted on strings aren't numbers (loadResource_SPFont / err 4.1)";
 
     SPFontPack mSPFont;
+    mSPFont.charDS = -1.0f; // Probably, Indicating that it Failed
     std::ifstream mSPFResource_F("font/" + mRoot);
     if(!mSPFResource_F.is_open()){
         std::cerr << fs_Err0 << std::endl;
@@ -557,8 +558,7 @@ SPFontPack loadResource_SPFont(std::string mRoot, float ivDSize){
     // Remember: mSPFResource_S; S means String
     int C = 0;
     int S = 0;
-    char dsi_Char = mSPFResource_S[C];
-    while(dsi_Char != '\r' && dsi_Char != '\n' && dsi_Char != '`'){
+    while(mSPFResource_S[C] != '\r' && mSPFResource_S[C] != '\n' && mSPFResource_S[C] != '`'){
         C++;
         if(C >= mSPFResource_S.size()){
             std::cout << fs_Err2 << std::endl;

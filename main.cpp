@@ -1005,7 +1005,7 @@ SPFontPack load_SPFont(std::string ObjName){
             for(size_t CHC = FRoots_pobj.second.size(); CHC > 0; CHC--){
                 if(FRoots_pobj.second[CHC - 1] != ' '){
                     SCompDone = true;
-                    FRoots_pobj.second = FRoots_pobj.first.substr(0, CHC);
+                    FRoots_pobj.second = FRoots_pobj.second.substr(0, CHC);
                     break;
                 }
             }

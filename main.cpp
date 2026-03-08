@@ -789,6 +789,7 @@ SPFontPack loadResource_SPFont(std::string mRoot, float ivDSize){
         if(C < static_cast<int>(mSPFResource_S.size())) C += mSPFResource_S[C] == '\r' ? 2 : 1;
     }
     mSPFont.charDS = ivDSize;
+    if((ivDSize < 0.0f || mSPFont.charDS < 0.0f) && mSPFont.charDS != -1.0f) std::cerr << "Display Size is negative. It's not ideal for show text (loadResource_SPFont / err 5)" << std::endl;
     return mSPFont;
 }
 

@@ -531,527 +531,108 @@ struct SPFontPack{ // Smart Portable Font Pack
     std::unordered_map<std::string, fontPack> fontPackCPD; // font pack Code Page Display
 };
 
+/*
+This function Will be on Repair and I will increase the Debugging activity. So this function will be Unabled
+
 SPFontPack loadResource_SPFont(std::string mRoot, float ivDSize){
-    const std::string fs_Err0 = "Smart Font Resource file was deleted, cleared or doesn't exist.\nThe type of file is \".fnt.csv\" for know (loadResource_SPFont / err 0)";
-    const std::string fs_Err2 = "Reader ended too early (loadResource_SPFont / err 2)";
-    const std::string fs_Err4_1 = "Numbers inserted on strings aren't numbers (loadResource_SPFont / err 4.1)";
-
-    SPFontPack mSPFont;
-    mSPFont.charDS = -1.0f; // Probably, Indicating that it Failed
-    std::ifstream mSPFResource_F("font/" + mRoot);
-    if(!mSPFResource_F.is_open()){
-        std::cerr << fs_Err0 << std::endl;
-        return mSPFont;
-    }
-
-    std::string mSPFResource_S((std::istreambuf_iterator<char>(mSPFResource_F)), std::istreambuf_iterator<char>());
-    mSPFResource_F.close();
-    if(mSPFResource_S.empty()){
-        std::cerr << fs_Err0 << std::endl;
-        return mSPFont;
-    }
-    if(mRoot.empty()){
-        std::cerr << "Root is not inserted on loadResource_SPFont function (loadResource_SPFont / err 1)" << std::endl;
-        return mSPFont;
-    }
-
-    // Remember: mSPFResource_S; S means String
-    int C = 0;
-    int S = 0;
-    while(mSPFResource_S[C] != '\r' && mSPFResource_S[C] != '\n' && mSPFResource_S[C] != '`'){
-        C++;
-        if(C >= mSPFResource_S.size()){
-            std::cout << fs_Err2 << std::endl;
-            return mSPFont;
-        }
-    }
-    mSPFont.name = mSPFResource_S.substr(S, C);
-
-    bool SCPass = false;
-    if(mSPFont.name[mSPFont.name.size() - 1] == ' '){
-        for(size_t CHC = mSPFont.name.size(); CHC > 0; CHC--){
-            if(mSPFont.name[CHC - 1] != ' '){
-                SCPass = true;
-                mSPFont.name = mSPFont.name.substr(0, CHC);
-                break;
-            }
-        }
-        if(!SCPass){
-            std::cerr << "Name is all spaced (loadResource_SPFont / err 3.0)" << std::endl;
-            return mSPFont;
-        }
-    }
-
-    while(mSPFResource_S[C] != '\r' && mSPFResource_S[C] != '\n'){
-        C++;
-        if(C >= mSPFResource_S.size()){
-            std::cerr << fs_Err2 << std::endl;
-            return mSPFont;
-        }
-    }
-    while(mSPFResource_S[C] == '\r' || mSPFResource_S[C] == '\n'){
-        C += mSPFResource_S[C] == '\r' ? 2 : 1;
-        if(C >= mSPFResource_S.size()){
-            std::cerr << fs_Err2 << std::endl; 
-            return mSPFont;
-        }
-    }
-
-    std::string stoi_NWidth;
-    std::string stoi_NHeight;
-
-    S = C;
-    while(mSPFResource_S[C] != ' '){
-        C++;
-        if(C >= mSPFResource_S.size()){
-            std::cerr << fs_Err2 << std::endl;
-            return mSPFont;
-        }
-        if(mSPFResource_S[C] == '\r' || mSPFResource_S[C] == '\n'){
-            std::cerr << "Not enough Numbers. It needs 2 (loadResource_SPFont / err 3.1)" << std::endl;
-            return mSPFont;
-        }
-    }
-    stoi_NWidth = mSPFResource_S.substr(S, C - S);
-    do{
-        S = ++C;
-    }while(mSPFResource_S[C] == ' ');
-
-    SCPass = false;
-    S = C;
-    while(true){
-        switch(mSPFResource_S[C]){
-            case ' ':
-            case '\r':
-            case '\n':
-            case '`':
-                SCPass = true;
-                break;
-            default:
-                C++;
-                if(C >= mSPFResource_S.size()){
-                    std::cerr << fs_Err2 << std::endl;
-                    return mSPFont;
-                }
-                break;
-        }
-        if(SCPass) break;
-    }
-    stoi_NHeight = mSPFResource_S.substr(S, C - S);
-
-    if(stoi_NWidth.empty() || stoi_NHeight.empty()){
-        std::cerr << "Number is all spaced or empty (loadResource_SPFont / err 4.0)" << std::endl;
-        return mSPFont;
-    }
-
-    std::pair<int,int> sCDimensions = {0, 0};
-    try{
-        sCDimensions = {std::stoi(stoi_NWidth), std::stoi(stoi_NHeight)};
-    }catch(...){
-        std::cerr << fs_Err4_1 << std::endl;
-        return mSPFont;
-    }
-
-    if(sCDimensions.first < 2 || sCDimensions.second < 2){
-        std::cerr << "Character Size readed is too small (loadResource_SPFont / err 4.2)" << std::endl;
-        return mSPFont;
-    }
-
-    mSPFont.charBS = sCDimensions;
-
-    while(mSPFResource_S[C] != '\r' && mSPFResource_S[C] != '\n'){
-        C++;
-        if(C >= mSPFResource_S.size()){
-            std::cerr << fs_Err2 << std::endl;
-            return mSPFont;
-        }
-    }
-    while(mSPFResource_S[C] == '\r' || mSPFResource_S[C] == '\n'){
-        C += mSPFResource_S[C] == '\r' ? 2 : 1;
-        if(C >= mSPFResource_S.size()){
-            std::cerr << fs_Err2 << std::endl; 
-            return mSPFont;
-        }
-    }
-
-    std::string tNameFP;
-    struct FPCP_CutFont{
-        int CharCX;
-        int CharCY;
-        int SCD;
-        char CCX;
-    };
-    FPCP_CutFont fxCutFont;
-
-    while(C < static_cast<int>(mSPFResource_S.size())){
-        S = C;
-        while(mSPFResource_S[C] != ' '){
-            C++;
-            if(C >= mSPFResource_S.size()){
-                std::cerr << fs_Err2 << std::endl;
-                return mSPFont;
-            }
-        }
-
-        tNameFP = mSPFResource_S.substr(S, C - S);
-        C++;
-        if(mSPFResource_S[C] == '"'){
-            S = ++C;
-            while(mSPFResource_S[C] != '"'){
-                C++;
-                if(C >= mSPFResource_S.size()){
-                    std::cerr << fs_Err2 << std::endl;
-                    return mSPFont;
-                }
-            }
-        }else{
-            S = C;
-            while(mSPFResource_S[C] != ' '){
-                C++;
-                if(C >= mSPFResource_S.size()){
-                    std::cerr << fs_Err2 << std::endl;
-                    return mSPFont;
-                }
-            }
-        }
-        std::string FPCP_Root = mSPFResource_S.substr(S, C - S);
-        while(mSPFResource_S[C] != ' '){
-            C++;
-            if(C >= mSPFResource_S.size()){
-                std::cerr << fs_Err2 << std::endl;
-                return mSPFont;
-            }
-        }
-        C++;
-
-        try{
-            S = C;
-            while(mSPFResource_S[C] != ' '){
-                C++;
-                if(C >= mSPFResource_S.size()){
-                    std::cerr << fs_Err2 << std::endl;
-                    return mSPFont;
-                }
-            }
-            fxCutFont.CharCX = std::stoi(mSPFResource_S.substr(S, C - S));
-            S = ++C;
-            while(mSPFResource_S[C] != ' '){
-                C++;
-                if(C >= mSPFResource_S.size()){
-                    std::cerr << fs_Err2 << std::endl;
-                    return mSPFont;
-                }
-            }
-            fxCutFont.CharCY = std::stoi(mSPFResource_S.substr(S, C - S));
-            S = ++C;
-            while(mSPFResource_S[C] != ' '){
-                C++;
-                if(C >= mSPFResource_S.size()){
-                    std::cerr << fs_Err2 << std::endl;
-                    return mSPFont;
-                }
-            }
-            fxCutFont.SCD = std::stoi(mSPFResource_S.substr(S, C - S), nullptr, 0);
-            C++;
-            if(C >= static_cast<int>(mSPFResource_S.size())){
-                std::cerr << fs_Err2 << std::endl;
-                return mSPFont;
-            }
-            fxCutFont.CCX = mSPFResource_S[C];
-        }catch(...){
-            std::cerr << fs_Err4_1;
-            return mSPFont;
-        }
-
-        int CCXInt = 0;
-        switch(fxCutFont.CCX){
-            case '1':
-            case 'B':
-            case 'b':
-                CCXInt = 1;
-                break;
-            case '2':
-            case 'G':
-            case 'g':
-                CCXInt = 2;
-                break;
-            case '3':
-            case 'R':
-            case 'r':
-                CCXInt = 3;
-                break;
-            default:
-                CCXInt = 0;
-        }
-        fontPack cpdFontPack = importFont_root(FPCP_Root.c_str(), sCDimensions.first, sCDimensions.second, fxCutFont.SCD, ((fxCutFont.CharCX * fxCutFont.CharCY) + fxCutFont.SCD) - 1, CCXInt);
-        mSPFont.fontPackCPD[tNameFP] = cpdFontPack;
-        C++;
-        if(C < static_cast<int>(mSPFResource_S.size())) C += mSPFResource_S[C] == '\r' ? 2 : 1;
-    }
-    mSPFont.charDS = ivDSize;
-    if((ivDSize < 0.0f || mSPFont.charDS < 0.0f) && mSPFont.charDS != -1.0f) std::cerr << "Display Size is negative. It's not ideal for show text (loadResource_SPFont / err 5)" << std::endl;
-    return mSPFont;
+    return FR_SPFont;
 }
+*/
 
-SPFontPack load_SPFont(std::string ObjName){
-    SPFontPack mSPFont;
+// Also this function Will be on repair, For fix the functionality. For this, we add an new argument made for debug
+SPFontPack load_SPFont(std::string ObjName, bool SAr_Deb){
+    SPFontPack FR_SPFont;
+    FR_SPFont.charBS = {0, 0};
+    FR_SPFont.charDS = -1.0f;
+
     const std::string fs_Err0 = "Looks like the the Font Data Identifier Parser was deleted or cleared.\nThis is a sacred file and it helps you to charge fonts and for save other configurations\n\nIf the file is in the recycle bin (trash), restore it or else, the app will not run.\nThe root of the file is assigned as: font/.root.fnt.csv (load_SPFont / err 0.0)";
-    const std::string fs_Err4 = "Deftoken name is all spaced (load_SPFont / err 4)";
-    const std::string fs_Err5 = "Parser ended too early (load_SPFont / err 5)";
-    const std::string fs_Err8 = "Negative value on Substring function (load_SPFont / err 8)";
+    const std::string fs_Err1 = "This character must not be space on the Parser (load_SPFont / err 1)";
+    const std::string fs_Err2 = "Insuficent Memory (load_SPFont / err 2)";
+    const std::string fs_Err3 = "Readed a float number that is not a number (load_SPFont / err 3)";
 
-    std::ifstream mFPars("font/root.fnt.csv");
-    if(!mFPars.is_open()){
+
+    // IR -> INITIAL ROOT
+    std::ifstream IR_F_Pars("font/root.fnt.csv");
+    if(!IR_F_Pars.is_open()){
         std::cerr << fs_Err0 << std::endl;
-        return mSPFont;
+        return FR_SPFont;
     }
 
-    std::string mFPars_conta((std::istreambuf_iterator<char>(mFPars)), std::istreambuf_iterator<char>());
-    mFPars.close();
-    if(mFPars_conta.empty()){
+    std::string IR_S_ParsDef((std::istreambuf_iterator<char>(IR_F_Pars)), std::istreambuf_iterator<char>());
+    IR_F_Pars.close();
+    if(IR_S_ParsDef.empty()){
         std::cerr << fs_Err0 << std::endl;
-        return mSPFont;
+        return FR_SPFont;
     }
     if(ObjName.empty()){
         std::cerr << "Font name or token inserted is empty (load_SPFont / err 0.1)" << std::endl;
-        return mSPFont;
+        return FR_SPFont;
     }
 
-    // pobj = parser object
-    struct dataFontDisp_pobj{
-        std::string name;
-        float sizeDisp;
-    };
-    std::unordered_map<std::string, dataFontDisp_pobj> ipv_FDefaults;
-    std::string defTName;
-    int C = 0;
-    dataFontDisp_pobj mDFD_PO;
-    mDFD_PO.sizeDisp = 0.0f;
-    while(mFPars_conta[C] != '\r' && mFPars_conta[C] != '\n'){
-        defTName = mFPars_conta.substr(C, 4);
-        C += 4;
-        if(mFPars_conta[C] != ' '){
-            std::cerr << "Default's tokens must have 4 characters or the parser ended too early (load_SPFont / err 1.0)" << std::endl;
-            return mSPFont;
+    if(SAr_Deb) std::cout << IR_S_ParsDef << "\n\nSize: " << IR_S_ParsDef.size() << std::endl;
+
+    size_t StCE_c = 0; // Car
+    size_t StCE_a = 0; // Anchor
+    struct SPD_St_Dfl{
+        std::string DefId_font;
+        float DefId_resz;
+    }; // DEFAULT
+    std::string DefId_name;
+
+    std::unordered_map<std::string, SPD_St_Dfl> DL_Dfl;
+    SPD_St_Dfl DLO_Dfl;
+
+    // 'a'  (1, 1)
+    // '\r' (0, 1)
+    // Remember to use AND (&&)
+
+    while(IR_S_ParsDef[StCE_c] != '\r' && IR_S_ParsDef[StCE_c] != '\n'){
+        DefId_name = IR_S_ParsDef.substr(StCE_c, 4);
+        StCE_c += 5;
+
+        if(IR_S_ParsDef[StCE_c] == ' '){
+            std::cerr << fs_Err1 << std::endl;
+            return FR_SPFont;
         }
 
-        if(defTName.size() != 4){
-            std::cerr << "variable: \"defTName\" is not 4 char length (load_SPFont / err 2)" << std::endl;
-            return mSPFont;
-        }
-        for(int CHC = 0; CHC < 4; CHC++){
-            if(defTName[CHC] == ' '){
-                std::cerr << "Default's tokens must have 4 characters (load_SPFont / err 1.1)" << std::endl;
-                return mSPFont;
+        StCE_a = StCE_c;
+        while(IR_S_ParsDef[StCE_c] != '$'){
+            StCE_c++;
+            if(IR_S_ParsDef.size() <= StCE_c){
+                std::cerr << fs_Err2 << std::endl;
+                return FR_SPFont;
             }
         }
-        C++;
+        DLO_Dfl.DefId_font = IR_S_ParsDef.substr(StCE_a, StCE_c - StCE_a);
 
-        mDFD_PO.name.clear();
-        int StartText = C;
-        while(mFPars_conta[C] != '$'){
-            C++;
-            if(C >= static_cast<int>(mFPars_conta.size())){
-                std::cerr << "The character '$' was never found during parsing (load_SPFont / err 3)" << std::endl;
-                return mSPFont;
+        StCE_c += 2;
+        StCE_a = StCE_c;
+        while(IR_S_ParsDef[StCE_c] != '\n' && IR_S_ParsDef[StCE_c] != '\r'){
+            StCE_c++;
+            if(IR_S_ParsDef.size() <= StCE_c){
+                std::cerr << fs_Err2 << std::endl;
+                return FR_SPFont;
             }
-        }
-        if(C - StartText < 0){
-            std::cerr << fs_Err8 << std::endl;
-            return mSPFont;
-        }
-        mDFD_PO.name = mFPars_conta.substr(StartText, C - StartText);
-        C++;
-        if(mDFD_PO.name.empty()){
-            std::cerr << "Deftoken name is empty (load_SPFont / err 4)" << std::endl;
-            return mSPFont;
-        }
-        bool SCompDone = false;
-        if(mDFD_PO.name[mDFD_PO.name.size() - 1] == ' '){
-            for(size_t CHC = mDFD_PO.name.size(); CHC > 0; CHC--){
-                if(mDFD_PO.name[CHC - 1] != ' '){
-                    SCompDone = true;
-                    mDFD_PO.name = mDFD_PO.name.substr(0, CHC);
-                    break;
-                }
-            }
-            if(!SCompDone) std::cerr << fs_Err4 << std::endl;
-        }
-        if(mDFD_PO.name[0] == ' ' && SCompDone){
-            SCompDone = false;
-            for(size_t CHC = 0; CHC < mDFD_PO.name.size(); CHC++){
-                if(mDFD_PO.name[CHC] != ' '){
-                    SCompDone = true;
-                    mDFD_PO.name = mDFD_PO.name.substr(CHC, mDFD_PO.name.size() - CHC);
-                    break;
-                }
-            }
-            if(!SCompDone) std::cerr << fs_Err4 << std::endl;
-        }
-        if(!SCompDone) return mSPFont;
-
-        while(mFPars_conta[C] == ' ' && C < static_cast<int>(mFPars_conta.size())) C++;
-        if(C >= static_cast<int>(mFPars_conta.size())){
-            std::cerr << fs_Err5 << std::endl;
-            return mSPFont;
         }
 
-        if(mFPars_conta[C] == '\r' || mFPars_conta[C] == '\n'){
-            mDFD_PO.sizeDisp = 1.0f;
-            ipv_FDefaults[defTName] = mDFD_PO;
-            C += mFPars_conta[C] == '\r' ? 2 : 1;
-            continue;
-        }
-        StartText = C;
-        std::string STRF_conv;
-        while(mFPars_conta[C] != '\r' && mFPars_conta[C] != '\n'){
-            C++;
-            if(C >= static_cast<int>(mFPars_conta.size())){
-                std::cerr << fs_Err5 << std::endl;
-                return mSPFont;
-            }            
-        }
-        if(C - StartText < 0){
-            std::cerr << fs_Err8 << std::endl;
-            return mSPFont;
-        }
-        STRF_conv = mFPars_conta.substr(StartText, C - StartText);
         try{
-            mDFD_PO.sizeDisp = std::stof(STRF_conv);
+            DLO_Dfl.DefId_resz = std::stof(IR_S_ParsDef.substr(StCE_a, StCE_c - StCE_a));
         }catch(...){
-            std::cerr << "miswritten or corrupted float number writted on the parser (load_SPFont / err 6)" << std::endl;
-            return mSPFont;
+            std::cerr << fs_Err3 << std::endl;
+            return FR_SPFont;
         }
-        ipv_FDefaults[defTName] = mDFD_PO;
-        C += mFPars_conta[C] == '\r' ? 2 : 1;
+
+        DL_Dfl[DefId_name] = DLO_Dfl;
+        StCE_c += IR_S_ParsDef[StCE_c] == '\r' ? 2 : 1;
     }
-    char mChar = mFPars_conta[C];
-    const std::string fs_Err7 = "Unexpected character after end (load_SPFont / err 7)";
-    if(mChar == '\r' || mChar == '\n'){
-        C += mChar == '\r' ? 2 : 1;
-    }else{
-        std::cerr << fs_Err7 << std::endl;
-        return mSPFont;
-    }
-
-    while(mFPars_conta[C] == '\r' || mFPars_conta[C] == '\n'){
-        C += mFPars_conta[C] == '\r' ? 2 : 1;
-    }
-
-    std::unordered_map<std::string, std::string> ipv_FRoots; // {Font Name, Font Root}
-    std::pair<std::string, std::string> FRoots_pobj;
-    int StartName = C;
-    while(C < static_cast<int>(mFPars_conta.size()) && mFPars_conta[C] != '\r' && mFPars_conta[C] != '\n'){
-        StartName = C;
-        while(mFPars_conta[C] != '$'){
-            C++;
-            if(C >= static_cast<int>(mFPars_conta.size())){
-                std::cerr << "The character '$' was never found during parsing (load_SPFont / err 3)" << std::endl;
-                return mSPFont;
-            }
-        }
-        if(C - StartName < 0){
-            std::cerr << fs_Err8 << std::endl;
-            return mSPFont;
-        }
-        FRoots_pobj.first = mFPars_conta.substr(StartName, C - StartName);
-        if(FRoots_pobj.first.empty()){
-            std::cout << "Font Name is empty or failed to load (load_SPFont / err 9)" << std::endl;
-            return mSPFont;
-        }
-
-        bool SCompDone = false;
-        if(FRoots_pobj.first[FRoots_pobj.first.size() - 1] == ' '){
-            for(size_t CHC = FRoots_pobj.first.size(); CHC > 0; CHC--){
-                if(FRoots_pobj.first[CHC - 1] != ' '){
-                    SCompDone = true;
-                    FRoots_pobj.first = FRoots_pobj.first.substr(0, CHC);
-                    break;
-                }
-            }
-            if(!SCompDone) std::cerr << fs_Err4 << std::endl;
-        }
-        if(FRoots_pobj.first[0] == ' ' && SCompDone){
-            SCompDone = false;
-            for(size_t CHC = 0; CHC < FRoots_pobj.first.size(); CHC++){
-                if(FRoots_pobj.first[CHC] != ' '){
-                    SCompDone = true;
-                    FRoots_pobj.first = FRoots_pobj.first.substr(CHC, FRoots_pobj.first.size() - CHC);
-                    break;
-                }
-            }
-            if(!SCompDone) std::cerr << fs_Err4 << std::endl;
-        }
-        if(!SCompDone) return mSPFont;
-
-        C++;
-        while(mFPars_conta[C] == ' ' && C < mFPars_conta.size()) C++;
-        if(C >= mFPars_conta.size()){
-            std::cerr << fs_Err5 << std::endl;
-            return mSPFont;
-        }
-
-        StartName = C;
-        while(C < static_cast<int>(mFPars_conta.size()) && mFPars_conta[C] != '\r' && mFPars_conta[C] != '\n'){
-            C++;
-        }
-        if(C - StartName < 0){
-            std::cerr << fs_Err8 << std::endl;
-            return mSPFont;
-        }
-        FRoots_pobj.second = mFPars_conta.substr(StartName, C - StartName);
-
-        SCompDone = false;
-        if(FRoots_pobj.second[FRoots_pobj.second.size() - 1] == ' '){
-            for(size_t CHC = FRoots_pobj.second.size(); CHC > 0; CHC--){
-                if(FRoots_pobj.second[CHC - 1] != ' '){
-                    SCompDone = true;
-                    FRoots_pobj.second = FRoots_pobj.second.substr(0, CHC);
-                    break;
-                }
-            }
-            if(!SCompDone){
-                std::cerr << fs_Err4 << std::endl;
-                return mSPFont;
-            }
-        }
-
-        ipv_FRoots[FRoots_pobj.first] = FRoots_pobj.second;
-        if(C < mFPars_conta.size()){
-            mChar = mFPars_conta[C];
-            if(mChar == '\r' || mChar == '\n'){
-                C += mFPars_conta[C] == '\r' ? 2 : 1;
-            }else{
-                std::cerr << fs_Err7 << std::endl;
-                return mSPFont;
-            }
+    if(SAr_Deb){
+        std::cout << "Define List (Defaults) results: " << std::endl;
+        for(const auto& DebO_DLOV_Dfl : DL_Dfl){
+            std::cout << "\t" << DebO_DLOV_Dfl.first << ": " << DebO_DLOV_Dfl.second.DefId_font << " " << DebO_DLOV_Dfl.second.DefId_resz << std::endl;
         }
     }
 
-    std::string mfit_FontToken2P; // Very Necesary
-    if(ObjName[0] == '#'){
-        auto FDefaultFind = ipv_FDefaults.find(ObjName.substr(1, 4));
-        if(FDefaultFind != ipv_FDefaults.end()){
-            mfit_FontToken2P = FDefaultFind->second.name;
-        }else{
-            std::cerr << "Default token name doesn't exist on the parser (load_SPFont / err 10)" << std::endl;
-            return mSPFont;
-        }
-    }else{
-        mfit_FontToken2P = ObjName;
-    }
-    auto SFRootFind = ipv_FRoots.find(mfit_FontToken2P); 
-    if(SFRootFind != ipv_FRoots.end()){
-        mfit_FontToken2P = SFRootFind->second;
-
-        mDFD_PO.sizeDisp = ObjName[0] == '#' ? mDFD_PO.sizeDisp : 1.0f;
-        mSPFont = loadResource_SPFont(mfit_FontToken2P, mDFD_PO.sizeDisp);
-
-        if(mSPFont.charDS == 0) std::cerr << "Smart Portable Font failed to extract, is corrupted or it was saved incorrectly (load_SPFont / err 12)" << std::endl;
-        return mSPFont;
-    }
-    std::cerr << "Root or token doesn't exist on the parser (load_SPFont / err 11)" << std::endl;
-    return mSPFont;
+    return FR_SPFont;
 }
 
 void CheckCast_SPFontPack(SPFontPack& mSPFP){
@@ -1120,7 +701,7 @@ int main(){
     std::pair<int,int> winSize;
     SDL_GetWindowSizeInPixels(win, &winSize.first, &winSize.second);
 
-    SPFontPack mSPFP_00 = load_SPFont("Bubblegum"); // Released by testing
+    SPFontPack mSPFP_00 = load_SPFont("Bubblegum", true); // Released by testing
     CheckCast_SPFontPack(mSPFP_00); // For an important debugging
 
     while(!quit){

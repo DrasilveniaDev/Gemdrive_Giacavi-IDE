@@ -1,5 +1,5 @@
 # Gemdrive Giacavi IDE
-## Version: 1.0a (BS 30)
+## Version: 1.0a (BS 31)
 The rules for the notation of the versions are the followings rules:
 
 **Numeral Version:** 1.2.3

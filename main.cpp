@@ -531,15 +531,7 @@ struct SPFontPack{ // Smart Portable Font Pack
     std::unordered_map<std::string, fontPack> fontPackCPD; // font pack Code Page Display
 };
 
-/*
-This function Will be on Repair and I will increase the Debugging activity. So this function will be Unabled
-
-SPFontPack loadResource_SPFont(std::string mRoot, float ivDSize){
-    return FR_SPFont;
-}
-*/
-
-// Also this function Will be on repair, For fix the functionality. For this, we add an new argument made for debug
+// This function is on repair, For fix the functionality. we add an new argument made for debug.
 SPFontPack load_SPFont(std::string ObjName, bool SAr_Deb){
     SPFontPack FR_SPFont;
     FR_SPFont.charBS = {0, 0};
@@ -629,6 +621,37 @@ SPFontPack load_SPFont(std::string ObjName, bool SAr_Deb){
         std::cout << "Define List (Defaults) results: " << std::endl;
         for(const auto& DebO_DLOV_Dfl : DL_Dfl){
             std::cout << "\t" << DebO_DLOV_Dfl.first << ": " << DebO_DLOV_Dfl.second.DefId_font << " " << DebO_DLOV_Dfl.second.DefId_resz << std::endl;
+        }
+    }
+    while(IR_S_ParsDef[StCE_c] == '\r' || IR_S_ParsDef[StCE_c] == '\n') StCE_c += IR_S_ParsDef[StCE_c] == '\r' ? 2 : 1;
+    if(SAr_Deb) std::cout << "\nCharacter Destine After end Defaults List: " << IR_S_ParsDef[StCE_c] << "\n" << std::endl;
+
+    std::unordered_map<std::string, std::string> DL_Fntr;
+    std::string DOL_FntN;
+
+    while(IR_S_ParsDef.size() > StCE_c){
+        StCE_a = StCE_c;
+        while(IR_S_ParsDef[StCE_c] != '$'){
+            StCE_c++;
+            if(IR_S_ParsDef.size() <= StCE_c){
+                std::cerr << fs_Err2 << std::endl;
+                return FR_SPFont;
+            }
+        }
+
+        DOL_FntN = IR_S_ParsDef.substr(StCE_a, StCE_c - StCE_a);
+        StCE_c += 2;
+        StCE_a = StCE_c;
+        while(IR_S_ParsDef[StCE_c] != '\r' && IR_S_ParsDef[StCE_c] != '\n' && IR_S_ParsDef.size() > StCE_c){
+            StCE_c++;
+        }
+        DL_Fntr[DOL_FntN] = IR_S_ParsDef.substr(StCE_a, StCE_c - StCE_a);
+        if(IR_S_ParsDef.size() > StCE_c) StCE_c += IR_S_ParsDef[StCE_c] == '\r' ? 2 : 1;
+    }
+    if(SAr_Deb){
+        std::cout << "Define List (Fonts) results: " << std::endl;
+        for(const auto& DebO_DLOV_Fntr : DL_Fntr){
+            std::cout << "\t" << DebO_DLOV_Fntr.first << ":> " << DebO_DLOV_Fntr.second << std::endl;
         }
     }
 

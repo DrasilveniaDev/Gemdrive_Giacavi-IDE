@@ -655,6 +655,73 @@ SPFontPack load_SPFont(std::string ObjName, bool SAr_Deb){
         }
     }
 
+    const std::string fs_Err4 = "Object Definitions for the Smart Font doesn't exist with the requested Object (load_SPFont / err 4)";
+
+    std::string StO_RootN;
+    float FRC_Dsize; // Conditional Resize Display
+    if(ObjName[0] == '#'){
+        auto DLFO_Def = DL_Dfl.find(ObjName.substr(1, 4));
+        if(DLFO_Def == DL_Dfl.end()){
+            std::cout << fs_Err4 << std::endl;
+            return FR_SPFont;
+        }
+        StO_RootN = DLFO_Def->second.DefId_font;
+        FRC_Dsize = DLFO_Def->second.DefId_resz;
+
+        auto DLFO_Def2 = DL_Fntr.find(StO_RootN);
+        if(DLFO_Def2 == DL_Fntr.end()){
+            std::cout << fs_Err4 << std::endl;
+            return FR_SPFont;
+        }
+        StO_RootN = DLFO_Def2->second;
+    }else{
+        auto DLFO_Def = DL_Fntr.find(ObjName);
+        if(DLFO_Def == DL_Fntr.end()){
+            std::cout << fs_Err4 << std::endl;
+            return FR_SPFont;
+        }
+        StO_RootN = DLFO_Def->second;
+        FRC_Dsize = 1.0f;
+    }
+    if(SAr_Deb) std::cout << "Parser Subroot: " << StO_RootN << "\nFont Resize: " << FRC_Dsize << std::endl;
+
+
+    std::string().swap(IR_S_ParsDef);
+    const std::string fs_Err5_0 = "Subroot not finded or invalid before the Subroot process (load_SPFont / err 5.0)";
+    const std::string fs_Err5_1 = "Subroot is finded, but returned empty or an invalid map (load_SPFont / err 5.1)";
+
+    // SR -> SUBROOT
+    if(StO_RootN.empty()){
+        std::cerr << fs_Err5_0 << std::endl;
+        return FR_SPFont;
+    }
+    std::ifstream SR_F_Pars("font/" + StO_RootN);
+    if(!SR_F_Pars.is_open()){
+        std::cerr << fs_Err5_0 << std::endl;
+        return FR_SPFont;
+    }
+    std::string SR_S_ParsCpa((std::istreambuf_iterator<char>(SR_F_Pars)), std::istreambuf_iterator<char>());
+    SR_F_Pars.close();
+    if(SR_S_ParsCpa.empty()){
+        std::cerr << fs_Err5_1 << std::endl;
+        return FR_SPFont;
+    }
+
+    if(SAr_Deb) std::cout << "\n" << SR_S_ParsCpa << std::endl;
+
+    StCE_c = 0;
+    StCE_a = 0;
+    bool StCE_i = false; // interruptor
+    while(!StCE_i){
+        switch(SR_S_ParsCpa[StCE_c]){
+            case '`': case '\r': case '\n':
+                StCE_i = true;
+                break;
+        }
+        if(!StCE_i) StCE_c++;
+    }
+    if(SAr_Deb) std::cout << "\nNameReg: " << SR_S_ParsCpa.substr(0, StCE_c) << std::endl;
+
     return FR_SPFont;
 }
 

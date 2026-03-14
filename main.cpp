@@ -540,7 +540,8 @@ SPFontPack load_SPFont(std::string ObjName, bool SAr_Deb){
     const std::string fs_Err0 = "Looks like the the Font Data Identifier Parser was deleted or cleared.\nThis is a sacred file and it helps you to charge fonts and for save other configurations\n\nIf the file is in the recycle bin (trash), restore it or else, the app will not run.\nThe root of the file is assigned as: font/.root.fnt.csv (load_SPFont / err 0.0)";
     const std::string fs_Err1 = "This character must not be space on the Parser (load_SPFont / err 1)";
     const std::string fs_Err2 = "Insuficent Memory (load_SPFont / err 2)";
-    const std::string fs_Err3 = "Readed a float number that is not a number (load_SPFont / err 3)";
+    const std::string fs_Err3 = "Readed a float number that is not a number (load_SPFont / err 3.0)";
+    const std::string fs_Err3_1 = "Readed a integer number that is not a number (load_SPFont / err 3.1)";
 
 
     // IR -> INITIAL ROOT
@@ -718,9 +719,203 @@ SPFontPack load_SPFont(std::string ObjName, bool SAr_Deb){
                 StCE_i = true;
                 break;
         }
-        if(!StCE_i) StCE_c++;
+        if(!StCE_i){
+            StCE_c++;
+            if(SR_S_ParsCpa.size() <= StCE_c){
+                std::cerr << fs_Err2 << std::endl;
+                return FR_SPFont;
+            }
+        }
     }
+    while(SR_S_ParsCpa[StCE_c - 1] == ' '){
+        StCE_c--;
+        if(StCE_c == 0){
+            std::cerr << "StCE_c Out of place (load_SPFont / err 2.1)" << std::endl;
+            return FR_SPFont;
+        }
+    }
+    FR_SPFont.name = SR_S_ParsCpa.substr(0, StCE_c);
     if(SAr_Deb) std::cout << "\nNameReg: " << SR_S_ParsCpa.substr(0, StCE_c) << std::endl;
+
+    while(SR_S_ParsCpa[StCE_c] != '\r' && SR_S_ParsCpa[StCE_c] != '\n'){
+        StCE_c++;
+        if(SR_S_ParsCpa.size() <= StCE_c){
+            std::cerr << fs_Err2 << std::endl;
+            return FR_SPFont;
+        }
+    }
+    while(SR_S_ParsCpa[StCE_c] == '\r' || SR_S_ParsCpa[StCE_c] == '\n'){
+        StCE_c += SR_S_ParsCpa[StCE_c] == '\r' ? 2 : 1;
+        if(SR_S_ParsCpa.size() <= StCE_c){
+            std::cerr << fs_Err2 << std::endl;
+            return FR_SPFont;
+        }
+    }
+    if(SAr_Deb) std::cout << "Subroot/CharEnd1: " << SR_S_ParsCpa[StCE_c] << std::endl;
+    std::string STI_S_charW;
+    std::string STI_S_charH;
+
+    StCE_a = StCE_c;
+    while(SR_S_ParsCpa[StCE_c] != ' '){
+        StCE_c++;
+        if(SR_S_ParsCpa.size() <= StCE_c){
+            std::cerr << fs_Err2 << std::endl;
+            return FR_SPFont;
+        }
+    }
+    STI_S_charW = SR_S_ParsCpa.substr(StCE_a, StCE_c - StCE_a);
+    StCE_a = ++StCE_c;
+    StCE_i = false;
+    while(!StCE_i){
+        switch(SR_S_ParsCpa[StCE_c]){
+            case ' ': case '\r': case '\n':
+                StCE_i = true;
+                break;
+        }
+        if(!StCE_i){
+            StCE_c++;
+            if(SR_S_ParsCpa.size() <= StCE_c){
+                std::cerr << fs_Err2 << std::endl;
+                return FR_SPFont;
+            }
+        }
+    }
+    STI_S_charH = SR_S_ParsCpa.substr(StCE_a, StCE_c - StCE_a);
+
+    try{
+        FR_SPFont.charBS.first = std::stoi(STI_S_charW);
+        FR_SPFont.charBS.second = std::stoi(STI_S_charH);
+    }catch(...){
+        std::cerr << fs_Err3_1 << std::endl;
+        return FR_SPFont;
+    }
+
+    while(SR_S_ParsCpa[StCE_c] != '\r' && SR_S_ParsCpa[StCE_c] != '\n'){
+        StCE_c++;
+        if(SR_S_ParsCpa.size() <= StCE_c){
+            std::cerr << fs_Err2 << std::endl;
+            return FR_SPFont;
+        }
+    }
+    while(SR_S_ParsCpa[StCE_c] == '\r' || SR_S_ParsCpa[StCE_c] == '\n'){
+        StCE_c += SR_S_ParsCpa[StCE_c] == '\r' ? 2 : 1;
+        if(SR_S_ParsCpa.size() <= StCE_c){
+            std::cerr << fs_Err2 << std::endl;
+            return FR_SPFont;
+        }
+    }
+
+    if(SAr_Deb) std::cout << "Subroot/CharEnd2: " << SR_S_ParsCpa[StCE_c] << std::endl;
+
+    std::string SRr_CPName;
+    std::string SRr_FPRoot;
+    while(SR_S_ParsCpa.size() > StCE_c){
+        StCE_a = StCE_c;
+        while(SR_S_ParsCpa[StCE_c] != ' '){
+            StCE_c++;
+            if(SR_S_ParsCpa.size() <= StCE_c){
+                std::cerr << fs_Err2 << std::endl;
+                return FR_SPFont;
+            }
+        }
+        SRr_CPName = SR_S_ParsCpa.substr(StCE_a, StCE_c - StCE_a);
+        StCE_c++;
+
+        if(SR_S_ParsCpa[StCE_c] == '"'){
+            StCE_a = ++StCE_c;
+            while(SR_S_ParsCpa[StCE_c] != '"'){
+                StCE_c++;
+                if(SR_S_ParsCpa.size() <= StCE_c){
+                    std::cerr << fs_Err2 << std::endl;
+                    return FR_SPFont;
+                }
+            }
+        }else{
+            StCE_a = StCE_c;
+            while(SR_S_ParsCpa[StCE_c] != ' '){
+                StCE_c++;
+                if(SR_S_ParsCpa.size() <= StCE_c){
+                    std::cerr << fs_Err2 << std::endl;
+                    return FR_SPFont;
+                }
+            }
+        }
+        SRr_FPRoot = SR_S_ParsCpa.substr(StCE_a, StCE_c - StCE_a);
+        StCE_c++;
+
+        struct SRr_Cnt_FontIArg{
+            std::string MulW; // stoi
+            std::string MulH; // stoi
+            std::string CharS; // stoi
+            int ColFilt;
+        };
+        SRr_Cnt_FontIArg SRr_O_FontIArg;
+
+        for(int Casturn = 0; Casturn < 3; Casturn++){
+            StCE_a = StCE_c;
+            while(SR_S_ParsCpa[StCE_c] != ' '){
+                StCE_c++;
+                if(SR_S_ParsCpa.size() <= StCE_c){
+                    std::cerr << fs_Err2 << std::endl;
+                    return FR_SPFont;
+                }
+            }
+
+            std::string SRr_CorS_TempStoi = SR_S_ParsCpa.substr(StCE_a, StCE_c - StCE_a);
+            switch(Casturn){
+                case 0:
+                    SRr_O_FontIArg.MulW = SRr_CorS_TempStoi;
+                    break;
+                case 1:
+                    SRr_O_FontIArg.MulH = SRr_CorS_TempStoi;
+                    break;
+                case 2:
+                    SRr_O_FontIArg.CharS = SRr_CorS_TempStoi;
+                    break;
+            }
+            StCE_c++;
+        }
+        switch(SR_S_ParsCpa[StCE_c]){
+            case 'B': case 'b': case '1':
+                SRr_O_FontIArg.ColFilt = 1;
+                break;
+            case 'G': case 'g': case '2':
+                SRr_O_FontIArg.ColFilt = 2;
+                break;
+            case 'R': case 'r': case '3':
+                SRr_O_FontIArg.ColFilt = 3;
+                break;
+            case '\r': case '\n': case ' ':
+                std::cerr << fs_Err1 << "\nAlso must not be Line Feed" << std::endl;
+                return FR_SPFont;
+            default:
+                SRr_O_FontIArg.ColFilt = 0;
+        }
+
+        if(SAr_Deb) std::cout << SRr_O_FontIArg.MulW << ", " << SRr_O_FontIArg.MulH << ", " << SRr_O_FontIArg.CharS << ", " << SRr_O_FontIArg.ColFilt << std::endl;
+        StCE_c++;
+
+        if(SR_S_ParsCpa.size() > StCE_c){
+            if(SR_S_ParsCpa[StCE_c] == '\r' || SR_S_ParsCpa[StCE_c] == '\n'){
+                StCE_c += SR_S_ParsCpa[StCE_c] == '\r' ? 2 : 1;
+            }
+        }
+
+        std::pair<int,int> SRr_I_MulDim;
+        int SRr_I_CharS;
+        try{
+            SRr_I_MulDim = {std::stoi(SRr_O_FontIArg.MulW), std::stoi(SRr_O_FontIArg.MulH)};
+            SRr_I_CharS = std::stoi(SRr_O_FontIArg.CharS, nullptr, 0);
+            FR_SPFont.fontPackCPD[SRr_CPName] = importFont_root(("font/" + SRr_FPRoot).c_str(), static_cast<uint32_t>(FR_SPFont.charBS.first), static_cast<uint32_t>(FR_SPFont.charBS.second), SRr_I_CharS, (SRr_I_MulDim.first * SRr_I_MulDim.second) + SRr_I_CharS - 1, SRr_O_FontIArg.ColFilt);
+        }catch(const std::invalid_argument& Exc_errMng){
+            std::cerr << fs_Err3_1 << std::endl;
+            return FR_SPFont;
+        }catch(...){
+            std::cerr << "Font Pack failed to load (load_SPFont / err 6)" << std::endl;
+            return FR_SPFont;
+        }
+    }
+    FR_SPFont.charDS = FRC_Dsize;
 
     return FR_SPFont;
 }
@@ -739,15 +934,6 @@ void CheckCast_SPFontPack(SPFontPack& mSPFP){
         std::cout << "\t\tStart Character: " << FixO.second.valS << "\n\t\tEnd Char: " << FixO.second.valE << std::endl;
         if(FixO.second.fullW % FixO.second.charW != 0 || FixO.second.fullH % FixO.second.charH != 0) std::cout << "\t\t[FONT IMAGE NOT ALIGNED]" << std::endl;
 
-        std::cout << "\n\t\traw data (Hexadecimal):" << std::endl;
-        C = 0;
-        for(const unsigned char& BRD : FixO.second.raw){
-            std::cout << std::hex << (BRD < 0x10 ? "0" : "") << ((int)BRD & 0xFF) << " ";
-            if(++C == 16){
-                std::cout << std::endl;
-                C = 0;
-            }
-        }
         std::cout << "\n" << std::endl;
     }
 
@@ -791,7 +977,7 @@ int main(){
     std::pair<int,int> winSize;
     SDL_GetWindowSizeInPixels(win, &winSize.first, &winSize.second);
 
-    SPFontPack mSPFP_00 = load_SPFont("Bubblegum", true); // Released by testing
+    SPFontPack mSPFP_00 = load_SPFont("Bubblegum", false); // Released by testing
     CheckCast_SPFontPack(mSPFP_00); // For an important debugging
 
     while(!quit){
